@@ -1,5 +1,6 @@
 import apiClient from '../axios';
 import Cookies from 'js-cookie';
+import axios from 'axios';
 
 // 型定義
 export interface LoginData {
@@ -51,15 +52,18 @@ export const login = async (data: LoginData): Promise<AuthResponse> => {
     });
     
     return response.data;
-  } catch (error: any) {
-    // エラーメッセージを整形
-    if (error.response?.data?.error) {
-      throw new Error(error.response.data.error);
-    } else if (error.response?.data?.detail) {
-      throw new Error(error.response.data.detail);
-    } else {
-      throw new Error('ログインに失敗しました');
+
+  } catch (error) {
+    // axios.isAxiosErrorを使って型安全に
+    if (axios.isAxiosError(error)) {
+      const errorData = error.response?.data;
+      if (errorData?.error) {
+        throw new Error(errorData.error);
+      } else if (errorData?.detail) {
+        throw new Error(errorData.detail);
+      }
     }
+    throw new Error('ログインに失敗しました');
   }
 };
 

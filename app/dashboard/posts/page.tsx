@@ -28,7 +28,7 @@ export default function PostsManagementPage() {
       setLoading(true);
       const data = await postsApi.getMyPosts();
       setPosts(data.results);
-    } catch (error: any) {
+    } catch (error) {
       console.error('投稿の取得に失敗:', error);
       setError('投稿の取得に失敗しました');
     } finally {
@@ -43,8 +43,9 @@ export default function PostsManagementPage() {
       await postsApi.publish(id);
       alert('記事を公開しました！');
       fetchMyPosts(); // リロード
-    } catch (error: any) {
-      alert('公開に失敗しました: ' + error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '公開に失敗しました';
+      alert('公開に失敗しました: ' + message);
     }
   };
 
@@ -55,8 +56,9 @@ export default function PostsManagementPage() {
       await postsApi.unpublish(id);
       alert('記事を下書きに戻しました');
       fetchMyPosts(); // リロード
-    } catch (error: any) {
-      alert('操作に失敗しました: ' + error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '操作に失敗しました';
+      alert('操作に失敗しました: ' + message);
     }
   };
 
@@ -67,8 +69,9 @@ export default function PostsManagementPage() {
       await postsApi.delete(id);
       alert('記事を削除しました');
       fetchMyPosts(); // リロード
-    } catch (error: any) {
-      alert('削除に失敗しました: ' + error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '削除に失敗しました';
+      alert('削除に失敗しました: ' + message);
     }
   };
 

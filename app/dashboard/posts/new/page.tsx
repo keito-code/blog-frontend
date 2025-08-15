@@ -30,7 +30,7 @@ export default function NewPostPage() {
     setIsSubmitting(true);
 
     try {
-      const newPost = await postsApi.create(formData);
+      await postsApi.create(formData);
       
       alert(formData.status === 'published' 
         ? '記事を公開しました！' 
@@ -38,8 +38,9 @@ export default function NewPostPage() {
       );
       
       router.push('/dashboard/posts');
-    } catch (err: any) {
-      setError(err.message || '投稿の作成に失敗しました');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '投稿の作成に失敗しました';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }

@@ -1,3 +1,4 @@
+import axios from 'axios';
 import apiClient from '../axios';
 import { PostListItem, PostDetail, PaginatedResponse } from '@/types/api';
 
@@ -5,7 +6,7 @@ import { PostListItem, PostDetail, PaginatedResponse } from '@/types/api';
 interface APIError {
   message?: string;
   detail?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // カスタムエラークラス
@@ -37,8 +38,9 @@ export interface PostUpdateInput {
 }
 
 // エラーハンドリングヘルパー
-const handleError = (error: any): never => {
-  if (error.response) {
+const handleError = (error: unknown): never => {
+  if (axios.isAxiosError(error)) {
+    if (error.response) {
     // サーバーからのエラーレスポンス
     const status = error.response.status;
     const data = error.response.data;
@@ -69,11 +71,14 @@ const handleError = (error: any): never => {
   } else if (error.request) {
     // リクエストは送信されたがレスポンスなし
     throw new PostAPIError('サーバーに接続できません', 0);
-  } else {
+  } 
+}
     // その他のエラー
-    throw new PostAPIError(error.message || '予期しないエラーが発生しました');
-  }
-};
+    if (error instanceof Error) {
+      throw new PostAPIError(error.message);
+    }
+    throw new PostAPIError('予期しないエラーが発生しました');
+  };
 
 export const postsApi = {
   // 記事一覧を取得

@@ -55,7 +55,7 @@ export default function EditPostPage({
           content: data.content,
           status: data.status,
         });
-      } catch (error: any) {
+      } catch (error) {
         console.error('記事の取得に失敗:', error);
         setError('記事の取得に失敗しました');
       } finally {
@@ -76,8 +76,10 @@ export default function EditPostPage({
       await postsApi.update(id, formData);  // idを使用
       alert('記事を更新しました！');
       router.push('/dashboard/posts');
-    } catch (err: any) {
-      setError(err.message || '更新に失敗しました');
+    } catch (error) {
+      console.error('更新に失敗:', error);
+      const message = error instanceof Error ? error.message : '更新に失敗しました';
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }

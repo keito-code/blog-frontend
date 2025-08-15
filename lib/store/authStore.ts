@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware';
 import type { User } from '@/lib/api/auth';
 import * as authApi from '@/lib/api/auth';
 import Cookies from 'js-cookie';
+import axios from 'axios';
 
 interface AuthState {
   // 状態
@@ -22,7 +23,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   devtools(
-    (set, get) => ({
+    (set) => ({
       // 初期状態
       user: null,
       isAuthenticated: false,
@@ -46,12 +47,13 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null
           });
-        } catch (error: any) {
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'ログインに失敗しました';
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
-            error: error.message || 'ログインに失敗しました'
+            error: message 
           });
           throw error; // コンポーネント側でもエラーをキャッチできるように
         }
@@ -62,7 +64,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           await authApi.logout();
-        } catch (error) {
+        } catch {
         } finally {
           // エラーが起きても必ずクリア
           set({
@@ -86,13 +88,13 @@ export const useAuthStore = create<AuthState>()(
         isLoading: false,
         error: null
       });
-    } catch (error: any) {
+    } catch (error) {
       
       // エラーメッセージの詳細な取得
       let errorMessage = '登録に失敗しました';
-      
-      // ここが重要！error.response?.data が存在することを確認
-      const errorData = error.response?.data;
+
+      if (axios.isAxiosError(error)) {
+        const errorData = error.response?.data;
       
       if (errorData && typeof errorData === 'object') {
         const errors: string[] = [];
@@ -128,6 +130,7 @@ export const useAuthStore = create<AuthState>()(
           errorMessage = errors.join('\n');
         }
       }
+    }
       
       
       set({
@@ -162,7 +165,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null
           });
-        } catch (error) {
+        } catch {
           // トークンが無効な場合
           Cookies.remove('access_token');
           Cookies.remove('refresh_token');

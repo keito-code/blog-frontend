@@ -6,7 +6,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, isAuthenticated, error, clearError } = useAuthStore();
+  const { register, isAuthenticated, error } = useAuthStore();
   
   const [formData, setFormData] = useState({
     lastName: '',
@@ -75,7 +75,7 @@ export default function RegisterPage() {
       await register(formData);
       // 成功したら自動的にログイン状態になり、useEffectでダッシュボードへリダイレクト
       alert('登録が完了しました！');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Registration failed:', error);
       // エラーはstoreで管理される
     } finally {

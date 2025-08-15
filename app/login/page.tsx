@@ -37,9 +37,8 @@ export default function LoginPage() {
     try {
       await login(formData.username, formData.password);
       // 成功したらuseEffectでリダイレクトされる
-    } catch (error) {
+    } catch {
       // エラーはstoreで管理される
-      console.error('Login failed:', error);
     } finally {
       setIsSubmitting(false);
     }
