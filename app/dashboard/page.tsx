@@ -1,199 +1,80 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/authStore';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { LogoutButton } from '@/components/auth/LogoutButton';
 
-export default function DashboardPage() {
-  const router = useRouter();
-  const { user, isAuthenticated, isLoading, logout } = useAuthStore();
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login?from=/dashboard');
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  const handleLogout = async () => {
-    if (confirm('ログアウトしますか？')) {
-      await logout();
-    }
-  };
-
-  if (isLoading) {
-    return null;
-  }
+export default async function DashboardPage() {
+  const { user } = await getAuthenticatedUser();
 
   if (!user) {
-    return null;
+    redirect('/login?from=/dashboard');
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f5f5f5'
-    }}>
-      <header style={{
-        backgroundColor: 'white',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        padding: '15px 30px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <h1 style={{ fontSize: '20px', margin: 0 }}>ダッシュボード</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <span style={{ color: '#666' }}>👤 {user.username}</span>
-          <button
-            onClick={handleLogout}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#ff4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            ログアウト
-          </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* ヘッダー */}
+      <header className="bg-white shadow-sm px-8 py-4 flex justify-between items-center">
+        <h1 className="text-xl font-semibold m-0">ダッシュボード</h1>
+        <div className="flex items-center gap-5">
+          <span className="text-gray-600">👤 {user.username}</span>
+          <LogoutButton />
         </div>
       </header>
 
-      <main style={{
-        padding: '30px',
-        maxWidth: '1200px',
-        margin: '0 auto'
-      }}>
-        <div style={{
-          backgroundColor: 'white',
-          padding: '30px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h2 style={{
-            fontSize: '24px',
-            marginBottom: '20px',
-            color: '#333'
-          }}>
+      {/* メインコンテンツ */}
+      <main className="p-8 max-w-6xl mx-auto">
+        <div className="bg-white p-8 rounded-lg shadow-sm">
+          <h2 className="text-2xl font-semibold mb-5 text-gray-800">
             ようこそ、{user.username}さん！
           </h2>
           
-          {/* 投稿管理リンクを追加 */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '20px',
-            marginBottom: '30px'
-          }}>
+          {/* 投稿管理リンク */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
             <Link 
               href="/dashboard/posts/new"
-              style={{
-                display: 'block',
-                padding: '25px',
-                backgroundColor: '#e3f2fd',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                color: 'inherit',
-                transition: 'background-color 0.2s',
-                border: '2px solid transparent'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#bbdefb';
-                e.currentTarget.style.borderColor = '#2196f3';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#e3f2fd';
-                e.currentTarget.style.borderColor = 'transparent';
-              }}
+              className="block p-6 bg-blue-50 rounded-lg border-2 border-transparent hover:bg-blue-100 hover:border-blue-500 transition-all group"
             >
-              <h3 style={{ 
-                fontSize: '18px', 
-                fontWeight: 'bold',
-                marginBottom: '10px',
-                color: '#1976d2'
-              }}>
+              <h3 className="text-lg font-bold mb-2 text-blue-700">
                 📝 新規投稿
               </h3>
-              <p style={{ 
-                margin: 0,
-                color: '#666',
-                fontSize: '14px'
-              }}>
+              <p className="m-0 text-gray-600 text-sm">
                 新しい記事を作成
               </p>
             </Link>
             
             <Link 
               href="/dashboard/posts"
-              style={{
-                display: 'block',
-                padding: '25px',
-                backgroundColor: '#e8f5e9',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                color: 'inherit',
-                transition: 'background-color 0.2s',
-                border: '2px solid transparent'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#c8e6c9';
-                e.currentTarget.style.borderColor = '#4caf50';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#e8f5e9';
-                e.currentTarget.style.borderColor = 'transparent';
-              }}
+              className="block p-6 bg-green-50 rounded-lg border-2 border-transparent hover:bg-green-100 hover:border-green-500 transition-all group"
             >
-              <h3 style={{ 
-                fontSize: '18px', 
-                fontWeight: 'bold',
-                marginBottom: '10px',
-                color: '#388e3c'
-              }}>
+              <h3 className="text-lg font-bold mb-2 text-green-700">
                 📚 投稿管理
               </h3>
-              <p style={{ 
-                margin: 0,
-                color: '#666',
-                fontSize: '14px'
-              }}>
+              <p className="m-0 text-gray-600 text-sm">
                 あなたの記事を管理
               </p>
             </Link>
           </div>
           
-          <div style={{
-            backgroundColor: '#f8f9fa',
-            padding: '20px',
-            borderRadius: '4px',
-            marginBottom: '20px'
-          }}>
-            <h3 style={{
-              fontSize: '16px',
-              marginBottom: '15px',
-              color: '#666'
-            }}>
+          {/* アカウント情報 */}
+          <div className="bg-gray-50 p-5 rounded mb-5">
+            <h3 className="text-base font-semibold mb-4 text-gray-600">
               アカウント情報
             </h3>
-            <p>ユーザー名: {user.username}</p>
-            <p>メールアドレス: {user.email}</p>
-            {user.lastName && user.firstName && (
-              <p>氏名: {user.lastName} {user.firstName}</p>
-            )}
+            <div className="space-y-1 text-gray-700">
+              <p>ユーザー名: {user.username}</p>
+              <p>メールアドレス: {user.email}</p>
+              {user.last_name && user.first_name && (
+                <p>氏名: {user.last_name} {user.first_name}</p>
+              )}
+            </div>
           </div>
 
-          <div style={{
-            padding: '20px',
-            backgroundColor: '#d4edda',
-            borderRadius: '4px',
-            border: '1px solid #c3e6cb'
-          }}>
-            <p style={{ margin: 0, color: '#155724' }}>
-              ✅ リロード対策が実装されました！<br />
-              ページを更新してもログイン状態が維持されます。
+          {/* 成功メッセージ */}
+          <div className="p-5 bg-green-50 rounded border border-green-200">
+            <p className="m-0 text-green-800">
+              ✅ サーバーサイドレンダリングで高速&安全！<br />
+              HttpOnly Cookieでセキュリティも万全です。
             </p>
           </div>
         </div>

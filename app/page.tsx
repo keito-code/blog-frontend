@@ -60,7 +60,7 @@ export default async function Home() {
             </div>
 
             <Link 
-              href={`/posts/${post.id}`}
+              href={`/posts/${post.slug}`}
               className="mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors inline-block text-center"
             >
               記事を読む →

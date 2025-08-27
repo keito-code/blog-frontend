@@ -1,193 +1,52 @@
-'use client';
+import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/lib/auth';
+import { LoginForm } from '@/components/auth/LoginForm';
+import Link from 'next/link';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/authStore';
+export const metadata: Metadata = {
+  title: 'ログイン | Django Blog',
+  description: 'ブログシステムにログイン',
+};
 
-export default function LoginPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { login, isAuthenticated, error, clearError } = useAuthStore();
+interface LoginPageProps {
+  searchParams: Promise<{ from?: string }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  // searchParamsを await で取得（Next.js 15）
+  const params = await searchParams;
+  const from = params.from || '/dashboard';
+
+  const user = await getCurrentUser();
+
+  if (user) {
+    redirect(from);
+  }
   
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // リダイレクト先を取得
-  const from = searchParams.get('from') || '/dashboard';
-
-  // 既にログイン済みならリダイレクト
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.push(from);
-    }
-  }, [isAuthenticated, router, from]);
-
-  // エラーをクリア
-  useEffect(() => {
-    return () => clearError();
-  }, [clearError]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      await login(formData.username, formData.password);
-      // 成功したらuseEffectでリダイレクトされる
-    } catch {
-      // エラーはstoreで管理される
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f5f5f5'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        padding: '40px',
-        borderRadius: '8px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        <h1 style={{
-          fontSize: '24px',
-          fontWeight: 'bold',
-          marginBottom: '30px',
-          textAlign: 'center',
-          color: '#333'
-        }}>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white p-10 rounded-lg shadow-lg w-full max-w-md">
+        <h1 className="text-2xl font-bold mb-8 text-center text-gray-800">
           ログイン
         </h1>
 
-         {/* リダイレクト先の表示 */}
-         {from !== '/dashboard' && (
-          <div style={{
-            backgroundColor: '#e3f2fd',
-            padding: '10px',
-            borderRadius: '4px',
-            marginBottom: '20px',
-            fontSize: '14px',
-            color: '#1976d2'
-          }}>
+        {from !== '/dashboard' && (
+          <div className="bg-blue-50 p-3 rounded mb-5 text-sm text-blue-700">
             ログイン後、元のページに戻ります
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '14px',
-              fontWeight: '500',
-              color: '#555'
-            }}>
-              ユーザー名
-            </label>
-            <input
-              type="text"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px'
-              }}
-              required
-              autoFocus
-            />
-          </div>
+        <LoginForm redirectTo={from} />
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontSize: '14px',
-              fontWeight: '500',
-              color: '#555'
-            }}>
-              パスワード
-            </label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px'
-              }}
-              required
-            />
-          </div>
-
-          {error && (
-            <div style={{
-              backgroundColor: '#fee',
-              color: '#c00',
-              padding: '10px',
-              borderRadius: '4px',
-              marginBottom: '20px',
-              fontSize: '14px'
-            }}>
-              ⚠️ {error}
-            </div>
-          )}
-
-          <button 
-            type="submit" 
-            disabled={isSubmitting}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: isSubmitting ? '#ccc' : '#0070f3',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              fontSize: '16px',
-              fontWeight: '500',
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-          >
-            {isSubmitting ? 'ログイン中...' : 'ログイン'}
-          </button>
-        </form>
-
-        <div style={{
-          marginTop: '20px',
-          paddingTop: '20px',
-          borderTop: '1px solid #eee',
-          textAlign: 'center',
-          fontSize: '14px',
-          color: '#666'
-        }}>
+        <div className="mt-5 pt-5 border-t border-gray-200 text-center text-sm text-gray-600">
           アカウントをお持ちでない方は
-          <a 
+          <Link
             href="/register"
-            style={{
-              color: '#0070f3',
-              textDecoration: 'none',
-              marginLeft: '5px'
-            }}
+            className="text-blue-600 hover:text-blue-700 ml-1"
           >
             新規登録
-          </a>
+          </Link>
         </div>
       </div>
     </div>

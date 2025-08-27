@@ -9,43 +9,49 @@ Django Blog APIのフロントエンドアプリケーション
 
 ## 📋 技術スタック
 
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript 5.0
-- **Styling**: Tailwind CSS
-- **State**: Zustand
+- **Framework**: Next.js 15.4.6 (App Router)
+- **Language**: TypeScript 5
+- **Styling**: Tailwind CSS 4
 - **Deploy**: Vercel
 
 ## ✨ 実装機能
 
-- JWT認証（HttpOnly Cookie）
 - 記事のCRUD操作
-- 記事一覧・詳細のSSR対応
-- レスポンシブデザイン
-- リアルタイム状態管理
+- JWT認証（HttpOnly Cookie）
+- 検索機能
+- 公開/非公開管理
+- Markdownレンダリング
 
 ## 🔧 セットアップ
 
 ```bash
-# Install dependencies
+# 依存関係インストール
 npm install
 
-# Environment variables
+# 環境変数設定
 cp .env.example .env.local
 
-# .env.local
-NEXT_PUBLIC_API_URL=http://localhost:8000
-
-# Run development server
+# 開発サーバー起動
 npm run dev
 ```
 
-## 📝 今後の改善予定
+## 環境変数
+```
+# .env.local
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+DJANGO_API_URL=http://localhost:8000
+```
 
-- [ ] 認証ページのSSR化
-- [ ] ダッシュボードの部分的SSR化
-- [ ] Markdownエディタ
-- [ ] 検索機能
+## 📝 今後の拡張・改善予定
+
 - [ ] ページネーション
+- [ ] Markdownプレビュー機能
+- [ ] コメント機能
+- [ ] タグ・カテゴリー機能
+- [ ] 認証機能のServer Actions化(Route Handler → Server Actions移行)
+- [ ] URLメッセージのモダン化(日本語 → メッセージコード化)
+- [ ] DAL層の実装
+
 
 ## 👤 作者
 

@@ -36,10 +36,6 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await authApi.login({ username, password });
           
-          // 管理者チェック（フロントエンドでも念のため）
-          if (response.user.isStaff) {
-            throw new Error('管理者はAPIからログインできません');
-          }
 
           set({
             user: response.user,

@@ -1,12 +1,14 @@
+// app/posts/[slug]/page.tsx
 import Link from 'next/link';
 import { PostDetail } from '@/types/api';
 import { notFound } from 'next/navigation';
+import ServerMarkdownRenderer from '@/components/ServerMarkdownRenderer';
 
 // データ取得関数
-async function getPost(id: string) {
+async function getPost(slug: string): Promise<PostDetail | null> {
   try {
     const response = await fetch(
-      `${process.env.DJANGO_API_URL || 'http://localhost:8000'}/api/v1/blog/posts/${id}/`,
+      `${process.env.DJANGO_API_URL || 'http://localhost:8000'}/api/v1/blog/posts/${slug}/`,
       {
         next: { revalidate: 60 }  // 60秒ごとに再検証
       }
@@ -24,15 +26,16 @@ async function getPost(id: string) {
 }
 
 // サーバーコンポーネント
-export default async function PostDetailPage({ 
-  params 
-}: { 
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params;
-  const post: PostDetail | null = await getPost(id);
+type Props = {
+  params: Promise<{ slug: string }>;
+};
 
-  if (!post) {
+export default async function PostDetailPage({ params }: Props) {
+
+  const resolvedParams = await params; 
+  const post = await getPost(resolvedParams.slug);
+
+  if (!post || post.status !=='published') {
     notFound(); // 404ページへ
   }
 
@@ -68,17 +71,19 @@ export default async function PostDetailPage({
             <div>🔄 更新日: {new Date(post.updated).toLocaleDateString('ja-JP')}</div>
           </div>
 
-          <div className="prose prose-lg max-w-none">
-            <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {post.content}
-            </div>
-          </div>
+          {/* Markdownレンダリングに変更 */}
+          <ServerMarkdownRenderer 
+            content={post.content}
+            // sanitize={true} はデフォルトなので省略可
+          />
 
-          {post.comments && (
+          {/* コメント機能（API実装後に有効化） */}
+          {post.comments && post.comments.length > 0 && (
             <div className="mt-8 pt-8 border-t">
-              <p className="text-gray-600">
+              <p className="text-gray-600 mb-4">
                 💬 コメント: {post.comments.length}件
               </p>
+              {/* TODO: コメント表示機能はAPI実装後に追加 */}
             </div>
           )}
         </div>

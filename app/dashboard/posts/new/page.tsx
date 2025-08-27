@@ -1,60 +1,22 @@
-'use client';
+// Server Component with Server Actions
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/authStore';
-import { postsApi, PostCreateInput } from '@/lib/api/posts';
+import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/lib/auth';
+import { createPost } from '@/app/actions/posts';
 
-export default function NewPostPage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
+export const metadata: Metadata = {
+  title: '新規投稿 | Django Blog',
+  description: '新しい記事を作成',
+};
+
+export default async function NewPostPage() {
+  // サーバーサイドで認証チェック
+  const user = await getCurrentUser();
   
-  const [formData, setFormData] = useState<PostCreateInput>({
-    title: '',
-    content: '',
-    status: 'draft',
-  });
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string>('');
-
-  // ログインチェック
   if (!user) {
-    router.push('/login');
-    return null;
+    redirect('/login?from=/dashboard/posts/new');
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
-    try {
-      await postsApi.create(formData);
-      
-      alert(formData.status === 'published' 
-        ? '記事を公開しました！' 
-        : '下書きを保存しました！'
-      );
-      
-      router.push('/dashboard/posts');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '投稿の作成に失敗しました';
-      setError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -66,13 +28,7 @@ export default function NewPostPage() {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6">
+        <form action={createPost} className="bg-white shadow rounded-lg p-6">
           <div className="mb-6">
             <label 
               htmlFor="title" 
@@ -84,8 +40,6 @@ export default function NewPostPage() {
               type="text"
               id="title"
               name="title"
-              value={formData.title}
-              onChange={handleChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="記事のタイトルを入力"
@@ -102,15 +56,13 @@ export default function NewPostPage() {
             <textarea
               id="content"
               name="content"
-              value={formData.content}
-              onChange={handleChange}
               required
               rows={15}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="記事の内容を入力（Markdown対応予定）"
+              placeholder="記事の内容を入力（Markdown対応）"
             />
             <p className="mt-1 text-sm text-gray-500">
-              * Markdown記法が使えます（実装予定）
+              * Markdown記法が使えます
             </p>
           </div>
 
@@ -124,8 +76,7 @@ export default function NewPostPage() {
             <select
               id="status"
               name="status"
-              value={formData.status}
-              onChange={handleChange}
+              defaultValue="draft"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="draft">下書き</option>
@@ -139,21 +90,18 @@ export default function NewPostPage() {
           <div className="flex gap-4">
             <button
               type="submit"
-              disabled={isSubmitting}
-              className={`px-6 py-2 text-white rounded-lg font-medium transition-colors ${
-                isSubmitting 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
+              name="action"
+              value="save"
+              className="px-6 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors"
             >
-              {isSubmitting ? '保存中...' : (
-                formData.status === 'published' ? '投稿する' : '下書き保存'
-              )}
+              投稿する
             </button>
             
             <button
-              type="button"
-              onClick={() => router.push('/dashboard/posts')}
+              type="submit"
+              name="action"
+              value="cancel"
+              formNoValidate
               className="px-6 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
               キャンセル

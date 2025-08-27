@@ -1,330 +1,130 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { postsApi } from '@/lib/api/posts';
-import { PostListItem } from '@/types/api';
-import { useAuthStore } from '@/lib/store/authStore';
+import { getAuthenticatedUser } from '@/lib/auth';
+import { getMyPosts } from '@/lib/api/server/posts';
+import { PostActions } from '@/components/posts/PostActions';
+import { Metadata } from 'next';
 
-export default function PostsManagementPage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
-  const [posts, setPosts] = useState<PostListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+export const metadata: Metadata = {
+  title: '投稿管理 | My Blog',
+  description: 'あなたの記事を管理',
+};
 
-  useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
+// searchParamsを追加
+interface PageProps {
+  searchParams: Promise<{ message?: string; error?: string }>;
+}
 
-    fetchMyPosts();
-  }, [user, router]);
-
-  const fetchMyPosts = async () => {
-    try {
-      setLoading(true);
-      const data = await postsApi.getMyPosts();
-      setPosts(data.results);
-    } catch (error) {
-      console.error('投稿の取得に失敗:', error);
-      setError('投稿の取得に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePublish = async (id: number) => {
-    if (!confirm('この記事を公開しますか？')) return;
-    
-    try {
-      await postsApi.publish(id);
-      alert('記事を公開しました！');
-      fetchMyPosts(); // リロード
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '公開に失敗しました';
-      alert('公開に失敗しました: ' + message);
-    }
-  };
-
-  const handleUnpublish = async (id: number) => {
-    if (!confirm('この記事を下書きに戻しますか？')) return;
-    
-    try {
-      await postsApi.unpublish(id);
-      alert('記事を下書きに戻しました');
-      fetchMyPosts(); // リロード
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '操作に失敗しました';
-      alert('操作に失敗しました: ' + message);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('この記事を削除しますか？この操作は取り消せません。')) return;
-    
-    try {
-      await postsApi.delete(id);
-      alert('記事を削除しました');
-      fetchMyPosts(); // リロード
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '削除に失敗しました';
-      alert('削除に失敗しました: ' + message);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        読み込み中...
-      </div>
-    );
+export default async function PostsManagementPage({ searchParams }: PageProps) {
+  // Next.js 15のsearchParams処理
+  const params = await searchParams;
+  
+  // サーバーサイドで認証チェック
+  const { user } = await getAuthenticatedUser();
+  
+  if (!user) {
+    redirect('/login?from=/dashboard/posts');
   }
 
+  // サーバーサイドで投稿を取得
+  const posts = await getMyPosts();
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#f5f5f5',
-      padding: '30px'
-    }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto'
-      }}>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4">
+        {/* 成功メッセージ */}
+        {params.message && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800">
+              ✅ {decodeURIComponent(params.message)}
+            </p>
+          </div>
+        )}
+        
+        {/* エラーメッセージ */}
+        {params.error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800">
+              ⚠️ {decodeURIComponent(params.error)}
+            </p>
+          </div>
+        )}
+        
         {/* ヘッダー */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '30px'
-        }}>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: 'bold',
-            margin: 0
-          }}>
-            投稿管理
-          </h1>
-          <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">投稿管理</h1>
+          <div className="flex gap-3">
             <Link
               href="/dashboard"
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#6c757d',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               ← ダッシュボード
             </Link>
             <Link
               href="/dashboard/posts/new"
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '4px',
-                fontSize: '14px'
-              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               ＋ 新規投稿
             </Link>
           </div>
         </div>
 
-        {/* エラー表示 */}
-        {error && (
-          <div style={{
-            padding: '15px',
-            backgroundColor: '#f8d7da',
-            color: '#721c24',
-            borderRadius: '4px',
-            marginBottom: '20px'
-          }}>
-            {error}
-          </div>
-        )}
-
         {/* 投稿リスト */}
         {posts.length === 0 ? (
-          <div style={{
-            backgroundColor: 'white',
-            padding: '60px',
-            borderRadius: '8px',
-            textAlign: 'center',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}>
-            <p style={{
-              fontSize: '18px',
-              color: '#666',
-              marginBottom: '20px'
-            }}>
+          <div className="bg-white rounded-lg shadow p-12 text-center">
+            <p className="text-lg text-gray-600 mb-6">
               まだ投稿がありません
             </p>
             <Link
               href="/dashboard/posts/new"
-              style={{
-                display: 'inline-block',
-                padding: '12px 24px',
-                backgroundColor: '#28a745',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '4px',
-                fontSize: '16px'
-              }}
+              className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               最初の記事を作成する
             </Link>
           </div>
         ) : (
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            overflow: 'hidden'
-          }}>
-            {posts.map((post, index) => (
-              <div
-                key={post.id}
-                style={{
-                  padding: '20px',
-                  borderBottom: index < posts.length - 1 ? '1px solid #e9ecef' : 'none',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f8f9fa';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'white';
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'start'
-                }}>
-                  {/* 投稿情報 */}
-                  <div style={{ flex: 1 }}>
-                    <h2 style={{
-                      fontSize: '20px',
-                      fontWeight: 'bold',
-                      marginBottom: '10px',
-                      color: '#333'
-                    }}>
-                      {post.title}
-                    </h2>
-                    
-                    <div style={{
-                      display: 'flex',
-                      gap: '20px',
-                      fontSize: '14px',
-                      color: '#666'
-                    }}>
-                      <span>
-                        📅 {new Date(post.created).toLocaleDateString('ja-JP')}
-                      </span>
-                      <span style={{
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        backgroundColor: post.status === 'published' ? '#d4edda' : '#fff3cd',
-                        color: post.status === 'published' ? '#155724' : '#856404'
-                      }}>
-                        {post.status === 'published' ? '✅ 公開中' : '📝 下書き'}
-                      </span>
+          <>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              {posts.map((post, index) => (
+                <div
+                  key={post.id}
+                  className={`p-6 hover:bg-gray-50 transition-colors ${
+                    index < posts.length - 1 ? 'border-b border-gray-200' : ''
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    {/* 投稿情報 */}
+                    <div className="flex-1">
+                      <h2 className="text-xl font-semibold text-gray-900 mb-3">
+                        {post.title}
+                      </h2>
+                      
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <span>
+                          📅 {new Date(post.created).toLocaleDateString('ja-JP')}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          post.status === 'published' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {post.status === 'published' ? '✅ 公開中' : '📝 下書き'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* アクションボタン */}
-                  <div style={{
-                    display: 'flex',
-                    gap: '10px',
-                    alignItems: 'center'
-                  }}>
-                    {/* 公開/非公開ボタン */}
-                    {post.status === 'draft' ? (
-                      <button
-                        onClick={() => handlePublish(post.id)}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#28a745',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '14px'
-                        }}
-                      >
-                        公開する
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleUnpublish(post.id)}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#ffc107',
-                          color: '#333',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '14px'
-                        }}
-                      >
-                        下書きに戻す
-                      </button>
-                    )}
-
-                    {/* 編集ボタン */}
-                    <Link
-                      href={`/dashboard/posts/${post.id}/edit`}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#007bff',
-                        color: 'white',
-                        textDecoration: 'none',
-                        borderRadius: '4px',
-                        fontSize: '14px'
-                      }}
-                    >
-                      編集
-                    </Link>
-
-                    {/* 削除ボタン */}
-                    <button
-                      onClick={() => handleDelete(post.id)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#dc3545',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '14px'
-                      }}
-                    >
-                      削除
-                    </button>
+                    {/* アクションボタン（クライアントコンポーネント） */}
+                    <PostActions post={post} />
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
 
-        {/* 投稿数の表示 */}
-        {posts.length > 0 && (
-          <div style={{
-            marginTop: '20px',
-            textAlign: 'center',
-            color: '#666',
-            fontSize: '14px'
-          }}>
-            全 {posts.length} 件の投稿
-          </div>
+            {/* 投稿数の表示 */}
+            <div className="mt-6 text-center text-sm text-gray-600">
+              全 {posts.length} 件の投稿
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import AuthNav from './AuthNav';
+import SearchBox from './search/SearchBox';
 
 export default function Header() {
   return (
@@ -11,7 +12,13 @@ export default function Header() {
               My Blog
             </h1>
           </Link>
-          <AuthNav />
+
+          <div className="flex items-center gap-4">
+            <div className="w-64">
+              <SearchBox />
+            </div>
+            <AuthNav />
+          </div>
         </div>
       </div>
     </header>
