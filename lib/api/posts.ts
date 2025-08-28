@@ -84,6 +84,7 @@ export const postsApi = {
   // 記事一覧を取得
   getAll: async (params?: { 
     page?: number;
+    pageSize?: number;
     search?: string; 
     status?: 'draft' | 'published';
     author?: string;
@@ -94,6 +95,9 @@ export const postsApi = {
       
       if (params?.page) {
         queryParams.append('page', params.page.toString());
+      }
+      if (params?.pageSize) {
+        queryParams.append('pageSize', params.pageSize.toString());  
       }
       if (params?.search) {
         queryParams.append('search', params.search);
@@ -238,12 +242,12 @@ export const postsApi = {
   },
 
   // 公開済み記事一覧を取得
-  getPublished: async (page = 1) => {
-    return postsApi.getAll({ page, status: 'published' });
+  getPublished: async (page = 1,  pageSize = 10) => {
+    return postsApi.getAll({ page, pageSize, status: 'published' });
   },
 
   // 記事を検索
-  search: async (query: string, page = 1) => {
-    return postsApi.getAll({ page, search: query });
+  search: async (query: string, page = 1, pageSize = 10) => {
+    return postsApi.getAll({ page, pageSize, search: query });
   },
 };

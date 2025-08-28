@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { PostListItem } from '@/types/api';
 
-// データ取得関数（サーバーで実行）
-async function getPosts() {
+// データ取得関数（最新6件のみ）
+async function getRecentPosts() {
   try {
     const response = await fetch(
-      `${process.env.DJANGO_API_URL || 'http://localhost:8000'}/api/v1/blog/posts/`,
+      `${process.env.DJANGO_API_URL || 'http://localhost:8000'}/api/v1/blog/posts/?status=published&pageSize=6`,
       {
-        next: { revalidate: 60 }  // 60秒ごとに再検証
+        next: { revalidate: 60 }
       }
     );
     
@@ -25,56 +25,85 @@ async function getPosts() {
 
 // サーバーコンポーネント
 export default async function Home() {
-  const data = await getPosts();
-
-  // 公開済みの記事のみフィルタリング
-  const publishedPosts = data.results?.filter(
-    (post: PostListItem) => post.status === 'published'
-  ) || [];
+  const data = await getRecentPosts();
+  const recentPosts = data.results || [];
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-gray-700">
-          記事一覧 
-          <span className="text-sm font-normal text-gray-500 ml-2">
-            （{publishedPosts.length}件）
-          </span>
-        </h2>
+      {/* タイトルセクション */}
+      <div className="mb-8 text-center">
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">
+          MyBlog
+        </h1>
+        <p className="text-gray-600">
+          技術メモと日々の記録
+        </p>
       </div>
 
-      {/* 記事カードのグリッド */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {publishedPosts.map((post: PostListItem) => (
-          <article 
-            key={post.id} 
-            className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6"
-          >
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
-              {post.title}
-            </h3>
-
-            <div className="text-sm text-gray-600 space-y-1">
-              <p>👤 作成者: {post.author}</p>
-              <p>📅 公開日: {new Date(post.publish).toLocaleDateString('ja-JP')}</p>
-            </div>
-
+      {/* 最新記事セクション */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold text-gray-700">
+            最新の記事
+          </h2>
+          {data.count > 6 && (
             <Link 
-              href={`/posts/${post.slug}`}
-              className="mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors inline-block text-center"
+              href="/posts"
+              className="text-blue-600 hover:text-blue-800 font-medium"
             >
-              記事を読む →
+              すべての記事を見る →
             </Link>
-          </article>
-        ))}
+          )}
+        </div>
+
+        {/* 記事カード */}
+        {recentPosts.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {recentPosts.map((post: PostListItem) => (
+              <article 
+                key={post.id} 
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6"
+              >
+                <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">
+                  {post.title}
+                </h3>
+
+                <div className="text-sm text-gray-600 space-y-1 mb-4">
+                  <p>👤 {post.author}</p>
+                  <p>📅 {new Date(post.publish).toLocaleDateString('ja-JP')}</p>
+                </div>
+
+                <Link 
+                  href={`/posts/${post.slug}`}
+                  className="mt-auto w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors inline-block text-center"
+                >
+                  記事を読む →
+                </Link>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-10 text-gray-500">
+            公開されている記事がまだありません
+          </div>
+        )}
       </div>
 
-      {/* エラー/空の状態 */}
-      {publishedPosts.length === 0 && (
-        <div className="text-center py-10 text-gray-500">
-          公開されている記事がまだありません
-        </div>
-      )}
+      {/* ナビゲーションセクション */}
+      <div className="border-t pt-8 flex justify-center gap-4">
+        <Link
+          href="/posts"
+          className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+        >
+          記事一覧
+        </Link>
+        <Link
+          href="/posts?search="
+          className="px-6 py-3 bg-white text-gray-800 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          記事を検索
+        </Link>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// app/posts/[slug]/page.tsx
 import Link from 'next/link';
 import { PostDetail } from '@/types/api';
 import { notFound } from 'next/navigation';
