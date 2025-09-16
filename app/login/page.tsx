@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/app/actions/auth';
 import { LoginForm } from '@/components/auth/LoginForm';
 import Link from 'next/link';
 

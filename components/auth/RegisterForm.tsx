@@ -1,44 +1,52 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { registerAction } from '@/app/actions/auth';
 
 export function RegisterForm() {
-  const router = useRouter();
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    passwordConfirmation: '',
+  });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
 
-    const formData = new FormData(e.currentTarget);
-    const data = {
-      lastName: formData.get('lastName') as string,
-      firstName: formData.get('firstName') as string,
-      email: formData.get('email') as string,
-      username: formData.get('username') as string,
-      password: formData.get('password') as string,
-      passwordConfirmation: formData.get('passwordConfirmation') as string,
-    };
+    // パスワード確認
+    if (formData.password !== formData.passwordConfirmation) {
+      setError('パスワードが一致しません');
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const result = await registerAction(
+        formData.username,
+        formData.email,
+        formData.password,
+        formData.passwordConfirmation,
+        '/dashboard'
+      );
       
-      const result = await response.json();
-      
-      if (response.ok) {
-        router.push('/dashboard');
-        router.refresh();
-      } else {
+      if (result && !result.success) {
         setError(result.error || '登録に失敗しました');
       }
-    } catch {
+      // 成功時はServer Action内でリダイレクトされる
+    } catch (error) {
+      console.error('Register error:', error);
       setError('ネットワークエラーが発生しました');
     } finally {
       setIsSubmitting(false);
@@ -47,104 +55,85 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit}>
-      {/* 姓 */}
       <div className="mb-5">
         <label className="block mb-2 text-sm font-medium text-gray-700">
-          姓
+          ユーザー名
         </label>
-        <input 
-          name="lastName" 
+        <input
           type="text"
+          name="username"
+          value={formData.username}
+          onChange={handleChange}
           className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="ユーザー名"
+          required
+          autoFocus
           disabled={isSubmitting}
         />
       </div>
 
-      {/* 名 */}
       <div className="mb-5">
         <label className="block mb-2 text-sm font-medium text-gray-700">
-          名
+          メールアドレス
         </label>
-        <input 
-          name="firstName" 
-          type="text"
+        <input
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
           className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="email@example.com"
+          required
           disabled={isSubmitting}
         />
       </div>
-      
-      {/* メールアドレス */}
+
       <div className="mb-5">
         <label className="block mb-2 text-sm font-medium text-gray-700">
-          メールアドレス <span className="text-red-500">*</span>
+          パスワード
         </label>
-        <input 
-          name="email" 
-          type="email" 
-          required 
+        <input
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
           className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="パスワード（8文字以上）"
+          required
+          minLength={8}
           disabled={isSubmitting}
         />
       </div>
-      
-      {/* ユーザー名 */}
+
       <div className="mb-5">
         <label className="block mb-2 text-sm font-medium text-gray-700">
-          ユーザー名 <span className="text-red-500">*</span>
-          <span className="text-xs text-gray-500 ml-1">(3文字以上)</span>
+          パスワード（確認）
         </label>
-        <input 
-          name="username" 
-          type="text"
-          required 
+        <input
+          type="password"
+          name="passwordConfirmation"
+          value={formData.passwordConfirmation}
+          onChange={handleChange}
           className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="パスワード（確認）"
+          required
+          minLength={8}
           disabled={isSubmitting}
         />
       </div>
-      
-      {/* パスワード */}
-      <div className="mb-5">
-        <label className="block mb-2 text-sm font-medium text-gray-700">
-          パスワード <span className="text-red-500">*</span>
-          <span className="text-xs text-gray-500 ml-1">(8文字以上)</span>
-        </label>
-        <input 
-          name="password" 
-          type="password" 
-          required 
-          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={isSubmitting}
-        />
-      </div>
-      
-      {/* パスワード確認 */}
-      <div className="mb-5">
-        <label className="block mb-2 text-sm font-medium text-gray-700">
-          パスワード（確認）<span className="text-red-500">*</span>
-        </label>
-        <input 
-          name="passwordConfirmation" 
-          type="password" 
-          required 
-          className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={isSubmitting}
-        />
-      </div>
-      
-      {/* エラーメッセージ */}
+
       {error && (
         <div className="bg-red-50 text-red-700 p-3 rounded mb-5 text-sm">
           ⚠️ {error}
         </div>
       )}
-      
-      {/* 送信ボタン */}
+
       <button 
         type="submit" 
         disabled={isSubmitting}
-        className="w-full py-3 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+        className="w-full py-3 bg-green-600 text-white rounded font-medium hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
       >
-        {isSubmitting ? '登録中...' : '登録する'}
+        {isSubmitting ? '登録中...' : '新規登録'}
       </button>
     </form>
   );

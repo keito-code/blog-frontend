@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import AuthNav from './AuthNav';
+//import AuthNav from './AuthNav';
 import SearchBox from './search/SearchBox';
 
 export default function Header() {
@@ -17,7 +17,7 @@ export default function Header() {
             <div className="w-64">
               <SearchBox />
             </div>
-            <AuthNav />
+            {/*<AuthNav />*/}
           </div>
         </div>
       </div>

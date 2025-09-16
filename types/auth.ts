@@ -170,11 +170,11 @@ export interface JSendSuccess<T> {
   // ============================================
   
   export const AUTH_ENDPOINTS = {
-    CSRF: '/auth/csrf/',
-    LOGIN: '/auth/login/',
-    LOGOUT: '/auth/logout/',
-    REGISTER: '/auth/register/',
-    REFRESH: '/auth/refresh/',
-    USER: '/auth/user/',
-    VERIFY: '/auth/verify/',
+    CSRF: '/api/v1/auth/csrf/',
+    LOGIN: '/api/v1/auth/login/',
+    LOGOUT: '/api/v1/auth/logout/',
+    REGISTER: '/api/v1/auth/register/',
+    REFRESH: '/api/v1/auth/refresh/',
+    USER: '/api/v1/auth/user/',
+    VERIFY: '/api/v1/auth/verify/',
   } as const;

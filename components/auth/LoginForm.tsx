@@ -1,62 +1,52 @@
-// components/auth/LoginForm.tsx
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { loginAction } from '@/app/actions/auth';
 
 interface LoginFormProps {
   redirectTo?: string;
 }
 
 export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError('');
-    
+    setError(null);
+
     try {
-      // Next.js API Route を使用
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
+      const result = await loginAction(email, password, redirectTo);
       
-      const data = await response.json();
-      
-      if (response.ok) {
-        // 成功：リダイレクト
-        router.push(redirectTo);
-        router.refresh(); // サーバーコンポーネントを再実行
-      } else {
-        // エラー表示
-        setError(data.error || 'ログインに失敗しました');
+      if (result && !result.success) {
+        setError(result.error || 'ログインに失敗しました');
+        setPassword(''); // 失敗時にパスワードをリセット
       }
+      // 成功時はServer Action内でリダイレクトされる
     } catch (error) {
       console.error('Login error:', error);
       setError('ネットワークエラーが発生しました');
+      setPassword('');
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="mb-5">
         <label className="block mb-2 text-sm font-medium text-gray-700">
-          ユーザー名
+          メールアドレス
         </label>
         <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="email@example.com"
           required
           autoFocus
           disabled={isSubmitting}

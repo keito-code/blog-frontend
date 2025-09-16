@@ -1,3 +1,12 @@
+// components/providers/AuthProvider.tsx
+'use client';
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
+
+/*
 'use client';
 
 import { useEffect } from 'react';
@@ -53,3 +62,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
+*/

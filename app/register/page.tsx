@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/app/actions/auth';
 import { redirect } from 'next/navigation';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import Link from 'next/link';

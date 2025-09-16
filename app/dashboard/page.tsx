@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getAuthenticatedUser } from '@/lib/auth';
+import { getCurrentUser } from '@/app/actions/auth';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 
 
 export default async function DashboardPage() {
-  const { user } = await getAuthenticatedUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect('/login?from=/dashboard');
@@ -64,17 +64,14 @@ export default async function DashboardPage() {
             <div className="space-y-1 text-gray-700">
               <p>ユーザー名: {user.username}</p>
               <p>メールアドレス: {user.email}</p>
-              {user.last_name && user.first_name && (
-                <p>氏名: {user.last_name} {user.first_name}</p>
-              )}
+              <p>登録日: {new Date(user.date_joined).toLocaleDateString('ja-JP')}</p>
             </div>
           </div>
 
           {/* 成功メッセージ */}
           <div className="p-5 bg-green-50 rounded border border-green-200">
             <p className="m-0 text-green-800">
-              ✅ サーバーサイドレンダリングで高速&安全！<br />
-              HttpOnly Cookieでセキュリティも万全です。
+              ✅ サーバーサイドレンダリング<br />
             </p>
           </div>
         </div>

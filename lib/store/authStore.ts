@@ -1,17 +1,18 @@
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+
+//import { create } from 'zustand';
+/*import { devtools } from 'zustand/middleware';
 import type { User } from '@/lib/api/auth';
 import * as authApi from '@/lib/api/auth';
 import Cookies from 'js-cookie';
 import axios from 'axios';
 
-interface AuthState {
+//interface AuthState {
   // 状態
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-
+///
   // アクション
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -185,3 +186,10 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+*/
+// 代わりに型だけ定義
+interface User {
+  id: number;
+  username: string;
+  email: string;
+}

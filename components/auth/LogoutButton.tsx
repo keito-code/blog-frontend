@@ -1,10 +1,9 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { logoutAction } from '@/app/actions/auth';
 
 export function LogoutButton() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = async () => {
@@ -12,22 +11,14 @@ export function LogoutButton() {
     
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-      });
-      
-      if (response.ok) {
-        router.push('/login');
-        router.refresh(); // サーバーコンポーネントを再実行
-      } else {
-        alert('ログアウトに失敗しました');
-      }
+      await logoutAction();
+      // Server Action内でリダイレクトされるので、ここでは何もしない
     } catch (error) {
       console.error('Logout failed:', error);
       alert('ログアウトに失敗しました');
-    } finally {
       setIsLoading(false);
     }
+    // 成功時はリダイレクトされるのでsetIsLoading(false)は不要
   };
 
   return (
