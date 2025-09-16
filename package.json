@@ -11,10 +11,8 @@
   "dependencies": {
     "@tanstack/react-query": "^5.84.2",
     "@tanstack/react-query-devtools": "^5.84.2",
-    "axios": "^1.11.0",
     "highlight.js": "^11.11.1",
     "isomorphic-dompurify": "^2.26.0",
-    "js-cookie": "^3.0.5",
     "lucide-react": "^0.540.0",
     "marked": "^16.1.2",
     "marked-highlight": "^2.2.2",
@@ -29,7 +27,6 @@
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.16",
     "@types/dompurify": "^3.0.5",
-    "@types/js-cookie": "^3.0.6",
     "@types/marked": "^5.0.2",
     "@types/node": "^20",
     "@types/react": "^19",
