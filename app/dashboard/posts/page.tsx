@@ -23,7 +23,7 @@ export default async function PostsManagementPage({ searchParams }: PageProps) {
   const { user } = await getAuthenticatedUser();
   
   if (!user) {
-    redirect('/login?from=/dashboard/posts');
+    redirect('/auth/login');
   }
 
   // サーバーサイドで投稿を取得

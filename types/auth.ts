@@ -164,6 +164,21 @@ export interface JSendSuccess<T> {
   export function isAdminUser(user: PrivateUser | AdminUser): user is AdminUser {
     return 'is_staff' in user && user.is_staff === true;
   }
+
+  /**
+ * 一般的なユーザー型
+ * Server ActionsやComponentsで使用
+ */
+export type User = PrivateUser;
+
+/**
+ * Server Actionsの戻り値型
+ */
+export interface ActionResult {
+  status: 'success' | 'error';
+  message?: string;
+  data?: any;
+}
   
   // ============================================
   // 定数

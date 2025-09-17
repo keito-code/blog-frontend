@@ -1,27 +1,17 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/auth';
-import { LogoutButton } from '@/components/auth/LogoutButton';
 
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect('/login?from=/dashboard');
+    redirect('/auth/login');
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
-      <header className="bg-white shadow-sm px-8 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-semibold m-0">ダッシュボード</h1>
-        <div className="flex items-center gap-5">
-          <span className="text-gray-600">👤 {user.username}</span>
-          <LogoutButton />
-        </div>
-      </header>
-
       {/* メインコンテンツ */}
       <main className="p-8 max-w-6xl mx-auto">
         <div className="bg-white p-8 rounded-lg shadow-sm">

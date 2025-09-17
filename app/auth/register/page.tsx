@@ -27,7 +27,7 @@ export default async function RegisterPage() {
         
         <div className="mt-5 pt-5 border-t border-gray-200 text-center text-sm text-gray-600">
           すでにアカウントをお持ちの方は
-          <Link href="/login" className="text-blue-600 hover:text-blue-700 ml-1">
+          <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 ml-1">
             ログイン
           </Link>
         </div>

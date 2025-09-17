@@ -15,7 +15,7 @@ export default async function NewPostPage() {
   const user = await getCurrentUser();
   
   if (!user) {
-    redirect('/login?from=/dashboard/posts/new');
+    redirect('/auth/login');
   }
 
   return (

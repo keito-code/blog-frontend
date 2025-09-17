@@ -23,7 +23,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
   // 認証チェック
   const { user } = await getAuthenticatedUser();
   if (!user) {
-    redirect('/login?from=/dashboard/posts');
+    redirect('/auth/login');
   }
 
   // 記事データを取得

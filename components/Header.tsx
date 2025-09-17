@@ -1,8 +1,12 @@
 import Link from 'next/link';
-//import AuthNav from './AuthNav';
+import { getCurrentUser } from '@/app/actions/auth';
+import AuthNavClient from './AuthNavClient';
 import SearchBox from './search/SearchBox';
 
-export default function Header() {
+export default async function Header() {
+  // Server Componentとして現在のユーザー情報を取得
+  const user = await getCurrentUser();
+
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
@@ -17,7 +21,8 @@ export default function Header() {
             <div className="w-64">
               <SearchBox />
             </div>
-            {/*<AuthNav />*/}
+            {/* Client Componentに認証状態とユーザー情報を渡す */}
+            <AuthNavClient user={user} />
           </div>
         </div>
       </div>

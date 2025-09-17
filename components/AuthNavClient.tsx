@@ -1,19 +1,23 @@
-/*
-'use client';
+'use client'
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/authStore';
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { logoutAction } from '@/app/actions/auth'
+import type { User } from '@/types/auth'
 
-export default function AuthNav() {
-  const router = useRouter();
-  const user = useAuthStore(state => state.user);
-  const logout = useAuthStore(state => state.logout);
-  
-  const handleLogout = () => {
-    logout();
-    router.push('/');
-  };
+interface AuthNavClientProps {
+  user: User | null
+}
+
+export default function AuthNavClient({ user }: AuthNavClientProps) {
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await logoutAction()
+    // Client側でナビゲーション制御
+    router.push('/')
+    router.refresh()
+  }
 
   if (!user) {
     return (
@@ -31,7 +35,7 @@ export default function AuthNav() {
           新規登録
         </Link>
       </div>
-    );
+    )
   }
 
   return (
@@ -56,6 +60,5 @@ export default function AuthNav() {
         ログアウト
       </button>
     </div>
-  );
+  )
 }
-*/

@@ -42,7 +42,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <div className="mt-5 pt-5 border-t border-gray-200 text-center text-sm text-gray-600">
           アカウントをお持ちでない方は
           <Link
-            href="/register"
+            href="/auth/register"
             className="text-blue-600 hover:text-blue-700 ml-1"
           >
             新規登録

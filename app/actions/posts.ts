@@ -20,7 +20,7 @@ export async function createPost(formData: FormData) {
                       cookieStore.get('access_token')?.value;
 
   if (!accessToken) {
-    redirect('/login?from=/dashboard/posts/new');
+    redirect('/auth/login');
   }
 
   // フォームデータを取得
@@ -58,7 +58,7 @@ export async function createPost(formData: FormData) {
         case 400:
           throw new Error(errorData.detail || '入力内容に誤りがあります');
         case 401:
-          redirect('/login?from=/dashboard/posts/new');
+          redirect('/auth/login');
         case 403:
           throw new Error('この操作を行う権限がありません');
         default:
@@ -101,7 +101,7 @@ export async function updatePost(slug: string, formData: FormData) {
                       cookieStore.get('access_token')?.value;
 
   if (!accessToken) {
-    redirect('/login');
+    redirect('/auth/login');
   }
 
   const title = formData.get('title') as string;
@@ -152,7 +152,7 @@ export async function deletePost(slug: string) {
                       cookieStore.get('access_token')?.value;
   
   if (!accessToken) {
-    redirect('/login');
+    redirect('/auth/login');
   }
 
   try {

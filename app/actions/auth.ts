@@ -176,7 +176,6 @@ export async function logoutAction() {
     cookieStore.delete('refresh_token');
     
     revalidatePath('/', 'layout');
-    redirect('/');
   }
 }
 
