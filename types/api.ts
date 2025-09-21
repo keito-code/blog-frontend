@@ -1,50 +1,112 @@
-// 著者の型
-export interface Author {
-  id: number;
-  username: string;
+/**
+ * 共通のAPI型定義
+ * JSend形式のレスポンスやページネーションなど
+ */
+
+// ============================================
+// JSend形式のレスポンス型定義
+// ============================================
+
+export interface JSendSuccess<T> {
+  status: 'success';
+  data: T;
 }
 
-// コメントの型
-export interface Comment {
-  id: number;
-  name: string;
-  email: string;
-  body: string;
-  created: string;  // ISO 8601形式の日時文字列
+export interface JSendFail {
+  status: 'fail';
+  data: Record<string, string | string[]>;  // バリデーションエラー
 }
 
-// 記事一覧用の型（軽量版）
-export interface PostListItem {
-  id: number;
-  title: string;
-  slug: string;
-  author: string;  // 一覧では username の文字列のみ
-  status: 'draft' | 'published';
-  publish: string;  // ISO 8601形式の日時文字列
-  created: string;  // ISO 8601形式の日時文字列
+export interface JSendError {
+  status: 'error';
+  message: string;
+  code?: string;  // UNAUTHORIZED, FORBIDDEN, NOT_FOUND, SERVER_ERROR など
 }
 
-// 記事詳細用の型（完全版）
-export interface PostDetail {
-  id: number;
-  title: string;
-  slug: string;
-  author: Author;  // 詳細ではオブジェクト
-  content: string;
-  status: 'draft' | 'published';
-  publish: string;  // ISO 8601形式の日時文字列
-  created: string;  // ISO 8601形式の日時文字列
-  updated: string;  // ISO 8601形式の日時文字列
-  comments: Comment[];
-}
+export type JSendResponse<T> = JSendSuccess<T> | JSendFail | JSendError;
 
-// ページネーション付きのレスポンス
+// ============================================
+// ページネーション型定義
+// ============================================
+
 export interface PaginatedResponse<T> {
   count: number;
   next: string | null;
   previous: string | null;
-  currentPage: number;
-  totalPages: number;
-  pageSize: number;
   results: T[];
 }
+
+// ============================================
+// Server Actions用の共通型
+// ============================================
+
+/**
+ * Server Actionsの戻り値型
+ */
+export interface ActionResult<T = any> {
+  status: 'success' | 'error';
+  message?: string;
+  data?: T;
+}
+
+/**
+ * エラーレスポンス
+ */
+export interface ValidationErrors {
+  [field: string]: string[];
+}
+
+/**
+ * フォーム状態の基本型
+ */
+export interface FormState {
+  success: boolean;
+  message?: string;
+  errors?: Record<string, string[]>;
+}
+
+// ============================================
+// 型ガード
+// ============================================
+
+export function isJSendSuccess<T>(response: JSendResponse<T>): response is JSendSuccess<T> {
+  return response.status === 'success';
+}
+
+export function isJSendFail(response: JSendResponse<unknown>): response is JSendFail {
+  return response.status === 'fail';
+}
+
+export function isJSendError(response: JSendResponse<unknown>): response is JSendError {
+  return response.status === 'error';
+}
+
+// ============================================
+// HTTPステータスコードとエラーコード定数
+// ============================================
+
+/**
+ * バックエンドのResponseFormatterで使用されるエラーコード
+ */
+export const ERROR_CODES = {
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  SERVER_ERROR: 'SERVER_ERROR',
+} as const;
+
+/**
+ * HTTPステータスコード
+ */
+export const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  METHOD_NOT_ALLOWED: 405,
+  UNPROCESSABLE_ENTITY: 422,
+  TOO_MANY_REQUESTS: 429,
+  INTERNAL_SERVER_ERROR: 500,
+} as const;

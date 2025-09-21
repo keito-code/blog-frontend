@@ -1,195 +1,74 @@
 /**
  * 認証関連の型定義
- * Django accounts/アプリのSerializerと完全に一致
+ * Django auth/アプリのSerializerと完全に一致
  */
 
-// ============================================
-// JSend形式のレスポンス型定義
-// ============================================
+import { PublicUser, PrivateUser } from './user';
+import { FormState } from './api';
 
-export interface JSendSuccess<T> {
-    status: 'success';
-    data: T;
-  }
-  
-  export interface JSendFail {
-    status: 'fail';
-    data: Record<string, string | string[]>;  // バリデーションエラー
-  }
-  
-  export interface JSendError {
-    status: 'error';
-    message: string;
-    code?: string;
-  }
-  
-  export type JSendResponse<T> = JSendSuccess<T> | JSendFail | JSendError;
-  
-  // ============================================
-  // ユーザーモデル（Django Serializerと一致）
-  // ============================================
-  
-  /**
-   * PublicUserSerializer
-   * ログイン・登録のレスポンス用
-   */
-  export interface PublicUser {
-    id: number;
-    date_joined: string;
-  }
-  
-  /**
-   * PrivateUserSerializer
-   * 認証済みユーザーの情報取得用
-   */
-  export interface PrivateUser {
-    id: number;
-    username: string;
-    email: string;
-    date_joined: string;
-  }
-  
-  /**
-   * AdminUserSerializer
-   * 管理者権限を持つユーザー用
-   */
-  export interface AdminUser extends PrivateUser {
-    is_active: boolean;
-    is_staff: boolean;
-  }
-  
-  // ============================================
-  // リクエスト型（Django Serializerと一致）
-  // ============================================
-  
-  /**
-   * LoginSerializer
-   * email + password認証
-   */
-  export interface LoginRequest {
-    email: string;
-    password: string;
-  }
-  
-  /**
-   * RegisterSerializer
-   */
-  export interface RegisterRequest {
-    username: string;
-    email: string;
-    password: string;
-    password_confirmation: string;
-  }
-  
-  /**
-   * UpdateUserSerializer
-   * 一般ユーザーはemailのみ変更可能
-   */
-  export interface UpdateUserRequest {
-    email: string;
-  }
-  
-  /**
-   * AdminUpdateUserSerializer
-   * 管理者は追加フィールドの変更可能
-   */
-  export interface AdminUpdateUserRequest {
-    username?: string;
-    email?: string;
-    is_active?: boolean;
-    is_staff?: boolean;
-  }
-  
-  // ============================================
-  // APIレスポンス型
-  // ============================================
-  
-  export interface LoginResponse {
-    user: PublicUser;
-  }
-  
-  export interface RegisterResponse {
-    user: PublicUser;
-  }
-  
-  export interface UserResponse {
-    user: PrivateUser | AdminUser;
-  }
-  
-  export interface CSRFTokenResponse {
-    csrf_token: string;
-  }
-  
-  export interface VerifyResponse {
-    valid: boolean;
-  }
-  
-  // ============================================
-  // Server Actions用の型定義
-  // ============================================
-  
-  /**
-   * フォーム状態（useFormStateで使用）
-   */
-  export interface AuthFormState {
-    success: boolean;
-    message?: string;
-    errors?: Record<string, string[]>;
-    user?: PublicUser | PrivateUser;
-  }
-  
-  /**
-   * エラーレスポンス
-   */
-  export interface ValidationErrors {
-    [field: string]: string[];
-  }
-  
-  // ============================================
-  // 型ガード
-  // ============================================
-  
-  export function isJSendSuccess<T>(response: JSendResponse<T>): response is JSendSuccess<T> {
-    return response.status === 'success';
-  }
-  
-  export function isJSendFail(response: JSendResponse<unknown>): response is JSendFail {
-    return response.status === 'fail';
-  }
-  
-  export function isJSendError(response: JSendResponse<unknown>): response is JSendError {
-    return response.status === 'error';
-  }
-  
-  export function isAdminUser(user: PrivateUser | AdminUser): user is AdminUser {
-    return 'is_staff' in user && user.is_staff === true;
-  }
-
-  /**
- * 一般的なユーザー型
- * Server ActionsやComponentsで使用
- */
-export type User = PrivateUser;
+// ============================================
+// リクエスト型（Django Serializerと一致）
+// ============================================
 
 /**
- * Server Actionsの戻り値型
+ * LoginSerializer
+ * email + password認証
  */
-export interface ActionResult {
-  status: 'success' | 'error';
-  message?: string;
-  data?: any;
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
-  
-  // ============================================
-  // 定数
-  // ============================================
-  
-  export const AUTH_ENDPOINTS = {
-    CSRF: '/api/v1/auth/csrf/',
-    LOGIN: '/api/v1/auth/login/',
-    LOGOUT: '/api/v1/auth/logout/',
-    REGISTER: '/api/v1/auth/register/',
-    REFRESH: '/api/v1/auth/refresh/',
-    USER: '/api/v1/auth/user/',
-    VERIFY: '/api/v1/auth/verify/',
-  } as const;
+
+/**
+ * RegisterSerializer
+ */
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}
+
+// ============================================
+// レスポンス型
+// ============================================
+
+export interface LoginResponse {
+  user: PublicUser;
+}
+
+export interface RegisterResponse {
+  user: PublicUser;
+}
+
+export interface CSRFTokenResponse {
+  csrf_token: string;
+}
+
+export interface VerifyResponse {
+  valid: boolean;
+}
+
+// ============================================
+// Server Actions用の型定義
+// ============================================
+
+/**
+ * 認証フォーム状態（useFormStateで使用）
+ */
+export interface AuthFormState extends FormState {
+  user?: PublicUser | PrivateUser;
+}
+
+// ============================================
+// エンドポイント定数
+// ============================================
+
+export const AUTH_ENDPOINTS = {
+  CSRF: '/v1/auth/csrf/',
+  LOGIN: '/v1/auth/login/',
+  LOGOUT: '/v1/auth/logout/',
+  REGISTER: '/v1/auth/register/',
+  REFRESH: '/v1/auth/refresh/',
+  VERIFY: '/v1/auth/verify/',
+} as const;
