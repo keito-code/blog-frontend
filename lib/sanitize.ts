@@ -62,14 +62,3 @@ export function sanitizeMarkdown(markdown: string): string {
   
   return cleaned;
 }
-
-/**
- * URLスラッグのサニタイズ
- * 安全なURL生成用
- */
-export function sanitizeSlug(slug: string): string {
-  if (!slug) return '';
-  
-  // 英数字、ハイフン、アンダースコアのみ許可
-  return slug.replace(/[^a-zA-Z0-9-_]/g, '');
-}
