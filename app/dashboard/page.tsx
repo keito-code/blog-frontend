@@ -54,7 +54,7 @@ export default async function DashboardPage() {
             <div className="space-y-1 text-gray-700">
               <p>ユーザー名: {user.username}</p>
               <p>メールアドレス: {user.email}</p>
-              <p>登録日: {new Date(user.date_joined).toLocaleDateString('ja-JP')}</p>
+              <p>登録日: {new Date(user.dateJoined).toLocaleDateString('ja-JP')}</p>
             </div>
           </div>
 

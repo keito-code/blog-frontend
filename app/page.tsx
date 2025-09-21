@@ -1,11 +1,18 @@
 import Link from 'next/link';
-import { PostListItem } from '@/types/api';
+import { PostListItem } from '@/types/post';
+import { POST_ENDPOINTS } from '@/types/post';
 
 // データ取得関数（最新6件のみ）
 async function getRecentPosts() {
+  const baseUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
+  const params = new URLSearchParams({
+    status: 'published',
+    pageSize: '6'
+  });
+
   try {
     const response = await fetch(
-      `${process.env.DJANGO_API_URL || 'http://localhost:8000'}/api/v1/blog/posts/?status=published&pageSize=6`,
+      `${baseUrl}${POST_ENDPOINTS.LIST}?${params}`,
       {
         next: { revalidate: 60 }
       }
@@ -69,8 +76,8 @@ export default async function Home() {
                 </h3>
 
                 <div className="text-sm text-gray-600 space-y-1 mb-4">
-                  <p>👤 {post.author}</p>
-                  <p>📅 {new Date(post.publish).toLocaleDateString('ja-JP')}</p>
+                  <p>👤 {post.authorName}</p>
+                  <p>📅 {new Date(post.createdAt).toLocaleDateString('ja-JP')}</p>
                 </div>
 
                 <Link 

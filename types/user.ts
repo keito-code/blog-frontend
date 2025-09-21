@@ -24,7 +24,7 @@ export interface PublicUser {
     id: number;
     username: string;
     email: string;
-    date_joined: string;
+    dateJoined: string;
   }
   
   /**
@@ -32,8 +32,8 @@ export interface PublicUser {
    * 管理者権限を持つユーザー用
    */
   export interface AdminUser extends PrivateUser {
-    is_active: boolean;
-    is_staff: boolean;
+    isActive: boolean;
+    isStaff: boolean;
   }
   
   /**
@@ -61,8 +61,8 @@ export interface PublicUser {
   export interface AdminUpdateUserRequest {
     username?: string;
     email?: string;
-    is_active?: boolean;
-    is_staff?: boolean;
+    isActive?: boolean;
+    isStaff?: boolean;
   }
   
   // ============================================

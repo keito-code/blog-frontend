@@ -4,16 +4,65 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import type {
-  JSendResponse,
   LoginResponse,
   RegisterResponse,
-  UserResponse,
   CSRFTokenResponse,
-  PrivateUser,
 } from '@/types/auth';
-import { AUTH_ENDPOINTS, isJSendSuccess, isJSendError } from '@/types/auth';
+import type {
+  UserResponse,
+  PrivateUser,
+} from '@/types/user';
+import { AUTH_ENDPOINTS } from '@/types/auth';
+import { USER_ENDPOINTS } from '@/types/user';
+import { JSendResponse, isJSendSuccess, isJSendError } from '@/types/api';
 
-const DJANGO_API_URL = 'http://localhost:8000';
+// 環境変数から取得（.env.localに定義）
+const DJANGO_API_URL = process.env.DJANGO_API_URL || 'http://localhost:8000';
+
+// CSRFトークン取得の共通化
+async function getCSRFToken() {
+  const res = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.CSRF}`, { 
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  
+  if (!res.ok) {
+    throw new Error('CSRF token fetch failed');
+  }
+  
+  const data = await res.json() as JSendResponse<CSRFTokenResponse>;
+  if (!isJSendSuccess(data)) {
+    throw new Error('Invalid CSRF response');
+  }
+  
+  return {
+    token: data.data.csrf_token,
+    cookie: res.headers.get('set-cookie')?.split(';')[0] || ''
+  };
+}
+
+// Cookie保存処理の共通化
+async function saveAuthCookies(setCookieHeader: string | null) {
+  if (!setCookieHeader) return;
+  
+  const cookieStore = await cookies();
+  const cookieStrings = setCookieHeader.split(/, (?=\w+=)/);
+  
+  for (const cookieString of cookieStrings) {
+    const [nameValue] = cookieString.split(';');
+    const [name, value] = nameValue.split('=');
+    
+    if (name === 'access_token' || name === 'refresh_token') {
+      cookieStore.set(name, value, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: name === 'access_token' ? 60 * 30 : 60 * 60 * 24 * 14,
+      });
+    }
+  }
+}
 
 /**
  * ログインアクション
@@ -25,84 +74,24 @@ export async function loginAction(
 ) {
   try {
     // 1. CSRFトークンを取得
-    const csrfResponse = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.CSRF}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!csrfResponse.ok) {
-      console.error('CSRF fetch failed:', csrfResponse.status);
-      return {
-        success: false,
-        error: 'セキュリティトークンの取得に失敗しました',
-      };
-    }
-
-    const csrfData: JSendResponse<CSRFTokenResponse> = await csrfResponse.json();
-    
-    if (!isJSendSuccess(csrfData)) {
-      return {
-        success: false,
-        error: 'CSRFトークンの取得に失敗しました',
-      };
-    }
-    
-    const csrfToken = csrfData.data.csrf_token;
-    const csrfCookie = csrfResponse.headers.get('set-cookie') || '';
+    const csrf = await getCSRFToken();
     
     // 2. ログインリクエスト
-    const loginUrl = `${DJANGO_API_URL}${AUTH_ENDPOINTS.LOGIN}`;
-    const response = await fetch(loginUrl, {
+    const response = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.LOGIN}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken,
-        'Cookie': csrfCookie.split(';')[0], // csrf_token=xxxxx
+        'X-CSRFToken': csrf.token,
+        'Cookie': csrf.cookie,
       },
       body: JSON.stringify({ email, password }),
     });
 
-    const text = await response.text();
-    
-    // HTMLレスポンスのチェック
-    if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
-      console.error('Received HTML instead of JSON');
-      console.error('First 500 chars:', text.substring(0, 500));
-      return {
-        success: false,
-        error: 'サーバーエラーが発生しました',
-      };
-    }
-
-    const data = JSON.parse(text) as JSendResponse<LoginResponse>;
+    const data = await response.json() as JSendResponse<LoginResponse>;
 
     // 成功時の処理
     if (response.ok && isJSendSuccess(data)) {
-      // JWTトークンをCookieに保存
-      const setCookie = response.headers.get('set-cookie');
-      if (setCookie) {
-        const cookieStore = await cookies();
-        
-        // 複数のCookieを処理
-        const cookieStrings = setCookie.split(/, (?=\w+=)/);
-        for (const cookieString of cookieStrings) {
-          const [nameValue] = cookieString.split(';');
-          const [name, value] = nameValue.split('=');
-          
-          if (name === 'access_token' || name === 'refresh_token') {
-            cookieStore.set(name, value, {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax',
-              path: '/',
-              maxAge: name === 'access_token' ? 60 * 30 : 60 * 60 * 24 * 14,
-            });
-          }
-        }
-      }
-
+      await saveAuthCookies(response.headers.get('set-cookie'));
       revalidatePath('/', 'layout');
       redirect(redirectTo);
     }
@@ -144,29 +133,18 @@ export async function loginAction(
  */
 export async function logoutAction() {
   try {
-    // CSRFトークン取得
-    const csrfResponse = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.CSRF}`, {
-      method: 'GET',
-    });
+    const csrf = await getCSRFToken();
     
-    if (csrfResponse.ok) {
-      const csrfData: JSendResponse<CSRFTokenResponse> = await csrfResponse.json();
-      if (isJSendSuccess(csrfData)) {
-        const csrfToken = csrfData.data.csrf_token;
-        const csrfCookie = csrfResponse.headers.get('set-cookie') || '';
-        
-        // ログアウトリクエスト
-        await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.LOGOUT}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken,
-            'Cookie': csrfCookie.split(';')[0],
-          },
-          body: JSON.stringify({}),
-        });
-      }
-    }
+    // ログアウトリクエスト
+    await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.LOGOUT}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrf.token,
+        'Cookie': csrf.cookie,
+      },
+      body: JSON.stringify({}),
+    });
   } catch (error) {
     console.error('Logout error:', error);
   } finally {
@@ -191,36 +169,15 @@ export async function registerAction(
 ) {
   try {
     // 1. CSRFトークンを取得
-    const csrfResponse = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.CSRF}`, {
-      method: 'GET',
-    });
-
-    if (!csrfResponse.ok) {
-      return {
-        success: false,
-        error: 'セキュリティトークンの取得に失敗しました',
-      };
-    }
-
-    const csrfData: JSendResponse<CSRFTokenResponse> = await csrfResponse.json();
-    
-    if (!isJSendSuccess(csrfData)) {
-      return {
-        success: false,
-        error: 'CSRFトークンの取得に失敗しました',
-      };
-    }
-    
-    const csrfToken = csrfData.data.csrf_token;
-    const csrfCookie = csrfResponse.headers.get('set-cookie') || '';
+    const csrf = await getCSRFToken();
 
     // 2. 登録リクエスト
     const response = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.REGISTER}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken,
-        'Cookie': csrfCookie.split(';')[0],
+        'X-CSRFToken': csrf.token,
+        'Cookie': csrf.cookie,
       },
       body: JSON.stringify({
         username,
@@ -230,40 +187,10 @@ export async function registerAction(
       }),
     });
 
-    const text = await response.text();
-    
-    if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
-      return {
-        success: false,
-        error: 'サーバーエラーが発生しました',
-      };
-    }
-
-    const data = JSON.parse(text) as JSendResponse<RegisterResponse>;
+    const data = await response.json() as JSendResponse<RegisterResponse>;
 
     if (response.status === 201 && isJSendSuccess(data)) {
-      // トークンをCookieに保存
-      const setCookie = response.headers.get('set-cookie');
-      if (setCookie) {
-        const cookieStore = await cookies();
-        const cookieStrings = setCookie.split(/, (?=\w+=)/);
-        
-        for (const cookieString of cookieStrings) {
-          const [nameValue] = cookieString.split(';');
-          const [name, value] = nameValue.split('=');
-          
-          if (name === 'access_token' || name === 'refresh_token') {
-            cookieStore.set(name, value, {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === 'production',
-              sameSite: 'lax',
-              path: '/',
-              maxAge: name === 'access_token' ? 60 * 30 : 60 * 60 * 24 * 14,
-            });
-          }
-        }
-      }
-
+      await saveAuthCookies(response.headers.get('set-cookie'));
       revalidatePath('/', 'layout');
       redirect(redirectTo);
     }
@@ -310,13 +237,12 @@ export async function getCurrentUser(): Promise<PrivateUser | null> {
       return null;
     }
 
-    const response = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.USER}`, {
+    const response = await fetch(`${DJANGO_API_URL}${USER_ENDPOINTS.ME}`, {
       headers: {
         'Cookie': `access_token=${accessToken.value}`,
       },
       cache: 'no-store',
     });
-
 
     if (!response.ok) {
       return null;
