@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { publishPost, unpublishPost, deletePost } from '@/app/actions/posts';
-import { PostListItem } from '@/types/api';
+import { PostListItem } from '@/types/post';
 
 interface PostActionsProps {
   post: PostListItem;

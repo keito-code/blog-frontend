@@ -1,14 +1,31 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getAuthenticatedUser } from '@/lib/auth';
-import { getMyPosts } from '@/lib/api/server/posts';
+import { getCurrentUser } from '@/app/actions/auth';
+import { POST_ENDPOINTS, PostListItem } from '@/types/post';
 import { PostActions } from '@/components/posts/PostActions';
-import { Metadata } from 'next';
+import { cookies } from 'next/headers';
 
-export const metadata: Metadata = {
-  title: '投稿管理 | My Blog',
-  description: 'あなたの記事を管理',
-};
+async function getMyPosts(): Promise<PostListItem[]> {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll()
+    .map(cookie => `${cookie.name}=${cookie.value}`)
+    .join('; ');
+
+  const response = await fetch(
+    `${process.env.DJANGO_API_URL}${POST_ENDPOINTS.LIST}`,
+    {
+      headers: {
+        'Cookie': cookieHeader,
+        'Accept': 'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) return [];
+  
+  const data = await response.json();
+  return data.data?.results || [];
+}
 
 // searchParamsを追加
 interface PageProps {
@@ -16,11 +33,9 @@ interface PageProps {
 }
 
 export default async function PostsManagementPage({ searchParams }: PageProps) {
-  // Next.js 15のsearchParams処理
   const params = await searchParams;
   
-  // サーバーサイドで認証チェック
-  const { user } = await getAuthenticatedUser();
+  const user = await getCurrentUser();
   
   if (!user) {
     redirect('/auth/login');
@@ -101,7 +116,7 @@ export default async function PostsManagementPage({ searchParams }: PageProps) {
                       
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <span>
-                          📅 {new Date(post.created).toLocaleDateString('ja-JP')}
+                          📅 {new Date(post.createdAt).toLocaleDateString('ja-JP')}
                         </span>
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
                           post.status === 'published' 

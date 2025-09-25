@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { POST_ENDPOINTS } from '@/types/post';
+import { POST_ENDPOINTS, PostDetail } from '@/types/post';
 import { 
   JSendResponse, 
   isJSendSuccess, 
@@ -68,10 +68,6 @@ async function apiFetch<T = unknown>(
     .map(cookie => `${cookie.name}=${cookie.value}`)
     .join('; ');
   
-  // 開発環境での警告
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('[API] Server Action内でCookieヘッダーを手動送信しています');
-  }
   
   // メソッド判定（デフォルトはGET）
   const method = options.method?.toUpperCase() || 'GET';
@@ -90,11 +86,6 @@ async function apiFetch<T = unknown>(
     ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
   };
   
-  // デバッグログ（開発環境のみ）
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[API] ${method} ${endpoint}`);
-    if (csrfToken) console.log('[API] CSRF Token included');
-  }
   
   const response = await fetch(`${DJANGO_API_URL}${endpoint}`, {
     ...options,
@@ -165,7 +156,7 @@ async function apiFetch<T = unknown>(
 }
 
 // Server Action: 記事を作成
-export async function createPost(formData: FormData): Promise<ActionResult> {
+export async function createPost(formData: FormData): Promise<ActionResult<PostDetail>> {
   // キャンセルボタンの処理
   const action = formData.get('action');
   if (action === 'cancel') {
@@ -195,7 +186,7 @@ export async function createPost(formData: FormData): Promise<ActionResult> {
   }
 
   try {
-    const data = await apiFetch<any>(POST_ENDPOINTS.CREATE, {
+    const data = await apiFetch<PostDetail>(POST_ENDPOINTS.CREATE, {
       method: 'POST',
       body: JSON.stringify({ title, content, status }),
     });
@@ -220,8 +211,7 @@ export async function createPost(formData: FormData): Promise<ActionResult> {
       return {
         status: 'error',
         message: error.message,
-        data: { requiresAuth: true }
-      };
+      } as ActionResult<PostDetail>;
     }
     
     // バリデーションエラー
@@ -229,8 +219,7 @@ export async function createPost(formData: FormData): Promise<ActionResult> {
       return {
         status: 'error',
         message: error.message,
-        data: { errors: error.errors }
-      };
+      } as ActionResult<PostDetail>;
     }
     
     return {
@@ -243,7 +232,7 @@ export async function createPost(formData: FormData): Promise<ActionResult> {
 }
 
 // Server Action: 記事を更新
-export async function updatePost(slug: string, formData: FormData): Promise<ActionResult> {
+export async function updatePost(slug: string, formData: FormData): Promise<ActionResult<PostDetail>> {
   const title = formData.get('title') as string;
   const content = formData.get('content') as string;
   const status = formData.get('status') as string;
@@ -263,7 +252,7 @@ export async function updatePost(slug: string, formData: FormData): Promise<Acti
   }
 
   try {
-    const data = await apiFetch(POST_ENDPOINTS.UPDATE(slug), {
+    const data = await apiFetch<PostDetail>(POST_ENDPOINTS.UPDATE(slug), {
       method: 'PATCH',
       body: JSON.stringify({ title, content, status }),
     });
@@ -286,7 +275,6 @@ export async function updatePost(slug: string, formData: FormData): Promise<Acti
       return {
         status: 'error',
         message: error.message,
-        data: { requiresAuth: true }
       };
     }
     
@@ -294,7 +282,6 @@ export async function updatePost(slug: string, formData: FormData): Promise<Acti
       return {
         status: 'error',
         message: error.message,
-        data: { errors: error.errors }
       };
     }
     
@@ -308,7 +295,7 @@ export async function updatePost(slug: string, formData: FormData): Promise<Acti
 }
 
 // Server Action: 記事を削除
-export async function deletePost(slug: string): Promise<ActionResult> {
+export async function deletePost(slug: string): Promise<ActionResult<undefined>> {
   try {
     await apiFetch(POST_ENDPOINTS.DELETE(slug), {
       method: 'DELETE',
@@ -320,7 +307,8 @@ export async function deletePost(slug: string): Promise<ActionResult> {
     
     return {
       status: 'success',
-      message: '記事を削除しました'
+      message: '記事を削除しました',
+      data: undefined
     };
     
   } catch (error) {
@@ -330,7 +318,6 @@ export async function deletePost(slug: string): Promise<ActionResult> {
       return {
         status: 'error',
         message: error.message,
-        data: { requiresAuth: true }
       };
     }
     
@@ -354,7 +341,7 @@ export async function deletePost(slug: string): Promise<ActionResult> {
 export async function updatePostStatus(
   slug: string, 
   status: 'published' | 'draft'
-): Promise<ActionResult> {
+): Promise<ActionResult<undefined>> {
   try {
     await apiFetch(POST_ENDPOINTS.UPDATE(slug), {
       method: 'PATCH',
@@ -370,7 +357,8 @@ export async function updatePostStatus(
       status: 'success',
       message: status === 'published' 
         ? '記事を公開しました' 
-        : '記事を非公開にしました'
+        : '記事を非公開にしました',
+      data: undefined
     };
     
   } catch (error) {
@@ -380,7 +368,6 @@ export async function updatePostStatus(
       return {
         status: 'error',
         message: error.message,
-        data: { requiresAuth: true }
       };
     }
     
@@ -394,12 +381,12 @@ export async function updatePostStatus(
 }
 
 // Server Action: 記事を公開（便利メソッド）
-export async function publishPost(slug: string): Promise<ActionResult> {
+export async function publishPost(slug: string): Promise<ActionResult<undefined>> {
   return updatePostStatus(slug, 'published');
 }
 
 // Server Action: 記事を非公開（便利メソッド）  
-export async function unpublishPost(slug: string): Promise<ActionResult> {
+export async function unpublishPost(slug: string): Promise<ActionResult<undefined>> {
   return updatePostStatus(slug, 'draft');
 }
 
