@@ -1,8 +1,6 @@
-// Server Component with Server Actions
-
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/app/actions/auth';
 import { createPost } from '@/app/actions/posts';
 
 export const metadata: Metadata = {

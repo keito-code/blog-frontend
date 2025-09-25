@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { POST_ENDPOINTS, PostDetail } from '@/types/post';
 import { 
   JSendResponse, 
@@ -156,14 +157,11 @@ async function apiFetch<T = unknown>(
 }
 
 // Server Action: 記事を作成
-export async function createPost(formData: FormData): Promise<ActionResult<PostDetail>> {
-  // キャンセルボタンの処理
+export async function createPost(formData: FormData): Promise<void> {
   const action = formData.get('action');
   if (action === 'cancel') {
-    return {
-      status: 'error',
-      message: 'キャンセルされました'
-    };
+    redirect('/dashboard/posts');
+    return;
   }
 
   // フォームデータを取得
@@ -173,20 +171,14 @@ export async function createPost(formData: FormData): Promise<ActionResult<PostD
 
   // バリデーション
   if (!title?.trim()) {
-    return {
-      status: 'error',
-      message: 'タイトルを入力してください'
-    };
+    throw new Error('タイトルを入力してください');
   }
   if (!content?.trim()) {
-    return {
-      status: 'error',
-      message: '本文を入力してください'
-    };
+    throw new Error('本文を入力してください');
   }
 
   try {
-    const data = await apiFetch<PostDetail>(POST_ENDPOINTS.CREATE, {
+    await apiFetch<PostDetail>(POST_ENDPOINTS.CREATE, {
       method: 'POST',
       body: JSON.stringify({ title, content, status }),
     });
@@ -194,40 +186,24 @@ export async function createPost(formData: FormData): Promise<ActionResult<PostD
     // 成功時：キャッシュを更新
     revalidatePath('/dashboard/posts');
     revalidatePath('/');
-    
-    return {
-      status: 'success',
-      message: status === 'published' 
-        ? '記事を公開しました！' 
-        : '下書きを保存しました！',
-      data
-    };
+
+    // 成功時はリダイレクト（returnの代わりに）
+    redirect('/dashboard/posts');
     
   } catch (error) {
     console.error('記事作成エラー:', error);
     
     // 認証エラーの場合は呼び出し側でリダイレクト判断
     if (error instanceof AuthenticationError) {
-      return {
-        status: 'error',
-        message: error.message,
-      } as ActionResult<PostDetail>;
+      throw new Error('認証が必要です。ログインしてください。');
     }
     
     // バリデーションエラー
     if (error instanceof ValidationError) {
-      return {
-        status: 'error',
-        message: error.message,
-      } as ActionResult<PostDetail>;
+      throw new Error(error.message);
     }
-    
-    return {
-      status: 'error',
-      message: error instanceof Error 
-        ? error.message 
-        : '記事の作成に失敗しました'
-    };
+
+    throw new Error('記事の作成に失敗しました');
   }
 }
 
