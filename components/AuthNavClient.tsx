@@ -1,24 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { logoutAction } from '@/app/actions/auth'
-import type { User } from '@/types/auth'
+import { LogoutButton } from '@/components/auth/LogoutButton'
+import type { PrivateUser } from '@/types/user'
 
 interface AuthNavClientProps {
-  user: User | null
+  user: PrivateUser | null
 }
 
 export default function AuthNavClient({ user }: AuthNavClientProps) {
-  const router = useRouter()
-
-  const handleLogout = async () => {
-    await logoutAction()
-    // Client側でナビゲーション制御
-    router.push('/')
-    router.refresh()
-  }
-
   if (!user) {
     return (
       <div className="flex gap-3">
@@ -53,12 +43,9 @@ export default function AuthNavClient({ user }: AuthNavClientProps) {
       >
         ✏️ 新規投稿
       </Link>
-      <button 
-        onClick={handleLogout} 
+      <LogoutButton 
         className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-      >
-        ログアウト
-      </button>
+      />
     </div>
   )
 }

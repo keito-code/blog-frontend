@@ -8,23 +8,12 @@ export async function middleware(request: NextRequest) {
     
     // トークンがない場合
     if (!accessToken && !refreshToken) {
-      return NextResponse.redirect(new URL('/login', request.url));
+      // ✅ 修正: /auth/login へリダイレクト
+      return NextResponse.redirect(new URL('/auth/login', request.url));
     }
     
-    // アクセストークンがある場合は通過させる
-    // （検証はServer Component側で行う）
-    if (accessToken) {
-      return NextResponse.next();
-    }
-    
-    // リフレッシュトークンのみの場合もとりあえず通過
-    // （実際のリフレッシュはServer Actions側で処理）
-    if (refreshToken) {
-      return NextResponse.next();
-    }
-    
-    // すべて失敗したらログインページへ
-    return NextResponse.redirect(new URL('/login', request.url));
+    // トークンがある場合は通過させる
+    return NextResponse.next();
   }
   
   return NextResponse.next();

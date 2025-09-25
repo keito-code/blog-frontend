@@ -1,9 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { registerAction } from '@/app/actions/auth';
+import { useRouter } from 'next/navigation';
+import { AUTH_ENDPOINTS, RegisterRequest, RegisterResponse, CSRFTokenResponse } from '@/types/auth';
+import { JSendResponse, isJSendSuccess, isJSendFail, isJSendError } from '@/types/api';
+
+const DJANGO_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export function RegisterForm() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -12,6 +17,43 @@ export function RegisterForm() {
   });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // CSRFトークンを取得
+  const getCSRFToken = async (): Promise<string | null> => {
+    try {
+      // まず既存のCookieからCSRFトークンを探す
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrf_token') {
+          return decodeURIComponent(value);
+        }
+      }
+
+      // Cookieにない場合はDjangoから取得
+      const response = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.CSRF}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch CSRF token');
+        return null;
+      }
+
+      const data: JSendResponse<CSRFTokenResponse> = await response.json();
+      if (isJSendSuccess(data)) {
+        return data.data.csrfToken;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting CSRF token:', error);
+      return null;
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -33,21 +75,64 @@ export function RegisterForm() {
     }
 
     try {
-      const result = await registerAction(
-        formData.username,
-        formData.email,
-        formData.password,
-        formData.passwordConfirmation,
-        '/dashboard'
-      );
+      console.log('=== クライアント側登録処理 ===');
       
-      if (result && !result.success) {
-        setError(result.error || '登録に失敗しました');
+      // CSRFトークンを取得
+      const csrfToken = await getCSRFToken();
+      console.log('CSRF Token obtained:', csrfToken ? 'Yes' : 'No');
+
+      // 登録リクエストボディ（型定義を使用）
+      const requestBody: RegisterRequest = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        passwordConfirmation: formData.passwordConfirmation,
+      };
+
+      // Django APIに直接リクエスト
+      const response = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.REGISTER}`, {
+        method: 'POST',
+        credentials: 'include', // ブラウザが自動的にCookieを送信・保存
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log('Response status:', response.status);
+
+      const data: JSendResponse<RegisterResponse> = await response.json();
+      console.log('Response data:', data);
+
+      if (response.ok && isJSendSuccess(data)) {
+        console.log('Registration successful, redirecting to login');
+        router.push('/dashboard');
+        router.refresh();
+        
+      } else if (isJSendFail(data)) {
+        // バリデーションエラー
+        const errors = Object.entries(data.data)
+          .map(([field, messages]) => {
+            const msgArray = Array.isArray(messages) ? messages : [messages];
+            return `${field}: ${msgArray.join(', ')}`;
+          })
+          .join('\n');
+        console.log('Validation error:', errors);
+        setError(errors || '入力内容に誤りがあります');
+      } else if (isJSendError(data)) {
+        // サーバーエラー
+        console.log('Server error:', data.message);
+        setError(data.message || '登録に失敗しました');
+      } else {
+        // 予期しないレスポンス
+        console.log('Unexpected response');
+        setError('登録に失敗しました');
       }
-      // 成功時はServer Action内でリダイレクトされる
     } catch (error) {
       console.error('Register error:', error);
-      setError('ネットワークエラーが発生しました');
+      setError('ネットワークエラーが発生しました。しばらく経ってからお試しください。');
     } finally {
       setIsSubmitting(false);
     }

@@ -57,13 +57,6 @@ export default async function DashboardPage() {
               <p>登録日: {new Date(user.dateJoined).toLocaleDateString('ja-JP')}</p>
             </div>
           </div>
-
-          {/* 成功メッセージ */}
-          <div className="p-5 bg-green-50 rounded border border-green-200">
-            <p className="m-0 text-green-800">
-              ✅ サーバーサイドレンダリング<br />
-            </p>
-          </div>
         </div>
       </main>
     </div>

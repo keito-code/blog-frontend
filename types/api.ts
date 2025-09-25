@@ -43,27 +43,20 @@ export interface PaginatedResponse<T> {
 /**
  * Server Actionsの戻り値型
  */
-export interface ActionResult<T = any> {
-  status: 'success' | 'error';
+export interface ActionSuccess<T> {
+  status: 'success';
   message?: string;
-  data?: T;
+  data: T;
 }
 
-/**
- * エラーレスポンス
- */
-export interface ValidationErrors {
-  [field: string]: string[];
+export interface ActionError {
+  status: 'error';
+  message: string;
+  errors?: Record<string, string | string[]>;
+  code?: string;  
 }
 
-/**
- * フォーム状態の基本型
- */
-export interface FormState {
-  success: boolean;
-  message?: string;
-  errors?: Record<string, string[]>;
-}
+export type ActionResult<T> = ActionSuccess<T> | ActionError;
 
 // ============================================
 // 型ガード
@@ -79,6 +72,18 @@ export function isJSendFail(response: JSendResponse<unknown>): response is JSend
 
 export function isJSendError(response: JSendResponse<unknown>): response is JSendError {
   return response.status === 'error';
+}
+
+export function isActionSuccess<T>(
+  result: ActionResult<T>
+): result is ActionSuccess<T> {
+  return result.status === 'success';
+}
+
+export function isActionError<T>(
+  result: ActionResult<T>
+): result is ActionError {
+  return result.status === 'error';
 }
 
 // ============================================

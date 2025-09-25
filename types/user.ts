@@ -13,7 +13,7 @@
  */
 export interface PublicUser {
     id: number;
-    date_joined: string;
+    dateJoined: string;
   }
   
   /**
@@ -78,7 +78,7 @@ export interface PublicUser {
   // ============================================
   
   export function isAdminUser(user: PrivateUser | AdminUser): user is AdminUser {
-    return 'is_staff' in user && user.is_staff === true;
+    return 'isStaff' in user && user.isStaff === true;
   }
   
   // ============================================

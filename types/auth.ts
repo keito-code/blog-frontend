@@ -3,8 +3,7 @@
  * Django auth/アプリのSerializerと完全に一致
  */
 
-import { PublicUser, PrivateUser } from './user';
-import { FormState } from './api';
+import { PublicUser } from './user';
 
 // ============================================
 // リクエスト型（Django Serializerと一致）
@@ -26,7 +25,7 @@ export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
-  password_confirmation: string;
+  passwordConfirmation: string;
 }
 
 // ============================================
@@ -42,22 +41,11 @@ export interface RegisterResponse {
 }
 
 export interface CSRFTokenResponse {
-  csrf_token: string;
+  csrfToken: string;
 }
 
 export interface VerifyResponse {
   valid: boolean;
-}
-
-// ============================================
-// Server Actions用の型定義
-// ============================================
-
-/**
- * 認証フォーム状態（useFormStateで使用）
- */
-export interface AuthFormState extends FormState {
-  user?: PublicUser | PrivateUser;
 }
 
 // ============================================
