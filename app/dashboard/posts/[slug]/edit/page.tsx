@@ -1,8 +1,10 @@
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { getAuthenticatedUser } from '@/lib/auth';
-import { getPostBySlug } from '@/lib/api/server/posts';
+import { getCurrentUser } from '@/app/actions/auth';
 import { updatePost } from '@/app/actions/posts';
+import { PostDetail, POST_ENDPOINTS } from '@/types/post';
+import { cookies } from 'next/headers';
+
 
 interface EditPostPageProps {
   params: Promise<{ slug: string }>;
@@ -16,12 +18,52 @@ export async function generateMetadata({ params }: EditPostPageProps): Promise<M
   };
 }
 
+async function getPostBySlug(slug: string): Promise<PostDetail | null> {
+  const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll()
+    .map(cookie => `${cookie.name}=${cookie.value}`)
+    .join('; ');
+  
+  try {
+    const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`, {
+      cache: 'no-store',
+      headers:{
+        'Cookie': cookieHeader,
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      return null;
+    }
+    
+    const data = await response.json();
+    
+    // JSend形式と直接オブジェクト形式の両方に対応
+    if (data && typeof data === 'object') {
+      if ('status' in data && data.status === 'success' && 'data' in data) {
+        // JSend形式
+        return data.data;
+      } else if ('id' in data && 'slug' in data) {
+        // 直接PostDetailオブジェクト
+        return data as PostDetail;
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Failed to fetch post:', error);
+    return null;
+  }
+}
+
 export default async function EditPostPage({ params }: EditPostPageProps) {
   // Next.js 15のparams処理
   const { slug } = await params;
   
   // 認証チェック
-  const { user } = await getAuthenticatedUser();
+  const user = await getCurrentUser();
   if (!user) {
     redirect('/auth/login');
   }
@@ -33,8 +75,10 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
     redirect('/dashboard/posts?error=記事が見つかりません');
   }
 
-  // 作者チェック
-  if (post.author.username !== user.username) {
+  // 作者チェック（authorNameは "Author{id}" 形式）
+  // ユーザーIDを抽出して比較
+  const authorId = post.authorName.match(/Author(\d+)/)?.[1];
+  if (authorId !== user.id.toString()) {
     redirect('/dashboard/posts?error=この記事を編集する権限がありません');
   }
 
@@ -64,9 +108,9 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
               <div>記事ID: {post.id}</div>
-              <div>作成者: {post.author.username}</div>
-              <div>作成日: {new Date(post.created).toLocaleDateString('ja-JP')}</div>
-              <div>更新日: {new Date(post.updated).toLocaleDateString('ja-JP')}</div>
+              <div>作成者: {post.authorName}</div>
+              <div>作成日: {new Date(post.createdAt).toLocaleDateString('ja-JP')}</div>
+              <div>更新日: {new Date(post.updatedAt).toLocaleDateString('ja-JP')}</div>
             </div>
           </div>
 
@@ -84,8 +128,9 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
               name="title"
               defaultValue={post.title}
               required
+              minLength={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="記事のタイトルを入力"
+              placeholder="記事のタイトルを入力（3文字以上）"
             />
           </div>
 
@@ -107,7 +152,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
               placeholder="記事の内容を入力"
             />
             <p className="mt-1 text-sm text-gray-500">
-              * Markdown記法が使えます
+              * HTMLタグが使用できます（サニタイズされます）
             </p>
           </div>
 
@@ -132,6 +177,21 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
               現在のステータス: {post.status === 'published' ? '公開中' : '下書き'}
             </p>
           </div>
+
+          {/* カテゴリー情報（読み取り専用） */}
+          {post.category && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                カテゴリー
+              </label>
+              <div className="px-3 py-2 bg-gray-100 rounded-lg text-gray-600">
+                {post.category.name}
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                ※ カテゴリーの変更は現在サポートされていません
+              </p>
+            </div>
+          )}
 
           {/* ボタン */}
           <div className="flex gap-4 justify-end">

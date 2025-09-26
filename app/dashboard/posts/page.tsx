@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/auth';
-import { POST_ENDPOINTS, PostListItem } from '@/types/post';
+import { PostListItem } from '@/types/post';
+import { USER_ENDPOINTS } from '@/types/user';
 import { PostActions } from '@/components/posts/PostActions';
 import { cookies } from 'next/headers';
 
@@ -12,7 +13,7 @@ async function getMyPosts(): Promise<PostListItem[]> {
     .join('; ');
 
   const response = await fetch(
-    `${process.env.DJANGO_API_URL}${POST_ENDPOINTS.LIST}`,
+    `${process.env.DJANGO_API_URL}${USER_ENDPOINTS.MY_POSTS}`,
     {
       headers: {
         'Cookie': cookieHeader,

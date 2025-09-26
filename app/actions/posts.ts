@@ -161,7 +161,6 @@ export async function createPost(formData: FormData): Promise<void> {
   const action = formData.get('action');
   if (action === 'cancel') {
     redirect('/dashboard/posts');
-    return;
   }
 
   // フォームデータを取得
@@ -182,14 +181,7 @@ export async function createPost(formData: FormData): Promise<void> {
       method: 'POST',
       body: JSON.stringify({ title, content, status }),
     });
-    
-    // 成功時：キャッシュを更新
-    revalidatePath('/dashboard/posts');
-    revalidatePath('/');
-
-    // 成功時はリダイレクト（returnの代わりに）
-    redirect('/dashboard/posts');
-    
+        
   } catch (error) {
     console.error('記事作成エラー:', error);
     
@@ -205,69 +197,61 @@ export async function createPost(formData: FormData): Promise<void> {
 
     throw new Error('記事の作成に失敗しました');
   }
+
+  // 成功時の処理（try-catchの外）
+  revalidatePath('/dashboard/posts');
+  revalidatePath('/');
+  redirect('/dashboard/posts');
 }
 
 // Server Action: 記事を更新
-export async function updatePost(slug: string, formData: FormData): Promise<ActionResult<PostDetail>> {
+export async function updatePost(slug: string, formData: FormData): Promise<void> {
+  const action = formData.get('action');
+  if (action === 'cancel') {
+    redirect('/dashboard/posts');
+  }
+
   const title = formData.get('title') as string;
   const content = formData.get('content') as string;
   const status = formData.get('status') as string;
 
   // バリデーション
   if (!title?.trim()) {
-    return {
-      status: 'error',
-      message: 'タイトルを入力してください'
-    };
+    throw new Error('タイトルを入力してください');
   }
   if (!content?.trim()) {
-    return {
-      status: 'error',
-      message: '本文を入力してください'
-    };
+    throw new Error('本文を入力してください');
   }
 
   try {
-    const data = await apiFetch<PostDetail>(POST_ENDPOINTS.UPDATE(slug), {
+    await apiFetch<PostDetail>(POST_ENDPOINTS.UPDATE(slug), {
       method: 'PATCH',
       body: JSON.stringify({ title, content, status }),
     });
-
-    // 成功時：キャッシュを更新
-    revalidatePath('/dashboard/posts');
-    revalidatePath(`/posts/${slug}`);
-    revalidatePath('/');
-    
-    return {
-      status: 'success',
-      message: '記事を更新しました',
-      data
-    };
     
   } catch (error) {
     console.error('記事更新エラー:', error);
     
     if (error instanceof AuthenticationError) {
-      return {
-        status: 'error',
-        message: error.message,
-      };
+      throw new Error('認証が必要です。ログインしてください。');
     }
     
     if (error instanceof ValidationError) {
-      return {
-        status: 'error',
-        message: error.message,
-      };
+      throw new Error(error.message);
     }
-    
-    return {
-      status: 'error',
-      message: error instanceof Error 
+
+    throw new Error(
+      error instanceof Error 
         ? error.message 
         : '記事の更新に失敗しました'
-    };
+    );
   }
+
+  // 成功時の処理
+  revalidatePath('/dashboard/posts');
+  revalidatePath(`/posts/${slug}`);
+  revalidatePath('/');
+  redirect('/dashboard/posts');
 }
 
 // Server Action: 記事を削除
