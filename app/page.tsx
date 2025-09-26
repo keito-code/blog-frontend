@@ -1,36 +1,49 @@
 import Link from 'next/link';
-import { PostListItem } from '@/types/post';
-import { POST_ENDPOINTS } from '@/types/post';
+import { POST_ENDPOINTS, PostListItem } from '@/types/post';
+import { JSendResponse, PaginatedResponse, isJSendSuccess } from '@/types/api';
+
+const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 // データ取得関数（最新6件のみ）
 async function getRecentPosts() {
-  const baseUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
   const params = new URLSearchParams({
     status: 'published',
-    pageSize: '6'
+    pageSize: '6',
+    ordering: '-createdAt' 
   });
 
   try {
     const response = await fetch(
-      `${baseUrl}${POST_ENDPOINTS.LIST}?${params}`,
+      `${apiUrl}${POST_ENDPOINTS.LIST}?${params}`,
       {
-        next: { revalidate: 60 }
+        next: { revalidate: 60 },
+        headers:{
+          'Accept': 'application/json',
+        }
       }
     );
     
     if (!response.ok) {
       console.error('Failed to fetch posts:', response.status);
-      return { results: [], count: 0 };
+      return { results: [], count: 0, next: null, previous: null };
+    }
+
+    const json: JSendResponse<PaginatedResponse<PostListItem>> = await response.json();
+    
+    if (isJSendSuccess(json)) {
+      return json.data;
     }
     
-    return response.json();
+    console.error('API error:', json);
+    return { results: [], count: 0, next: null, previous: null };
   } catch (error) {
     console.error('Error fetching posts:', error);
-    return { results: [], count: 0 };
+    return { results: [], count: 0, next: null, previous: null };
   }
 }
+    
 
-// サーバーコンポーネント
+// メインコンポーネント
 export default async function Home() {
   const data = await getRecentPosts();
   const recentPosts = data.results || [];
