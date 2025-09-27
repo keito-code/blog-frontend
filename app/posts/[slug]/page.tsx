@@ -10,7 +10,7 @@ async function getPost(slug: string): Promise<PostDetail | null> {
 
   try {
     const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`, {
-        next: { revalidate: 60 },
+        next: { revalidate: 3600 },
         headers: {
           'Accept': 'application/json',
         }

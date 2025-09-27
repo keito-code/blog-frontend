@@ -26,7 +26,7 @@ async function getPosts(params: SearchParams): Promise<PaginatedResponse<PostLis
     const response = await fetch(
       `${apiUrl}${POST_ENDPOINTS.LIST}?${queryParams}`,
       {
-        next: { revalidate: 60 },
+        next: { revalidate: 3600 },
         headers: {
           'Accept': 'application/json',
         }
