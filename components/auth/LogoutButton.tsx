@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import  { AUTH_ENDPOINTS } from '@/types/auth';
 
-const DJANGO_API_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export function LogoutButton({
   className = 'text-gray-700 hover:text-gray-900',
@@ -30,14 +29,16 @@ export function LogoutButton({
   };
 
   const handleLogout = async () => {
+    // 二重クリック防止
+    if (isLoading) return;
+
     setIsLoading(true);
     try {
       // CSRFトークンを取得（HttpOnly=falseなので取得可能）
       const csrfToken = getCSRFTokenFromCookie();
-      console.log('CSRF Token found:', csrfToken ? 'Yes' : 'No');
 
       const response = await fetch(
-        `${DJANGO_API_URL}${AUTH_ENDPOINTS.LOGOUT}`,
+        `${apiUrl}${AUTH_ENDPOINTS.LOGOUT}`,
         {
           method: 'POST',
           credentials: 'include', // Cookieを送る
@@ -49,9 +50,9 @@ export function LogoutButton({
           body: JSON.stringify({}), // 空のJSONボディを送信
         }
       );
-
-      if (response.ok) {
-        console.log('Logout successful');
+      
+      // 401も成功として扱う（すでにログアウト済みの場合）
+      if (response.ok || response.status === 401) {
         router.push('/auth/login');
         router.refresh();
       } else {
