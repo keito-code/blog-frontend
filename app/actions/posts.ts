@@ -200,9 +200,15 @@ export async function createPost(formData: FormData): Promise<void> {
 
   // 成功時の処理（try-catchの外）
   revalidatePath('/dashboard/posts');
-  revalidatePath('/');
+  
+  // 公開記事の場合のみ公開ページを更新
+  if (status === 'published') {
+    revalidatePath('/');
+    revalidatePath('/posts');
+  }
   redirect('/dashboard/posts');
 }
+
 
 // Server Action: 記事を更新
 export async function updatePost(slug: string, formData: FormData): Promise<void> {
@@ -250,7 +256,12 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
   // 成功時の処理
   revalidatePath('/dashboard/posts');
   revalidatePath(`/posts/${slug}`);
-  revalidatePath('/');
+
+  // 公開記事の場合のみ、ホームと一覧を更新
+  if (status === 'published') {
+    revalidatePath('/');
+    revalidatePath('/posts');
+  }
   redirect('/dashboard/posts');
 }
 
@@ -264,6 +275,8 @@ export async function deletePost(slug: string): Promise<ActionResult<undefined>>
     // 成功時：キャッシュを更新
     revalidatePath('/dashboard/posts');
     revalidatePath('/');
+    revalidatePath('/posts');
+    revalidatePath(`/posts/${slug}`);
     
     return {
       status: 'success',
@@ -312,6 +325,7 @@ export async function updatePostStatus(
     revalidatePath('/dashboard/posts');
     revalidatePath('/');
     revalidatePath(`/posts/${slug}`);
+    revalidatePath('/posts');
     
     return {
       status: 'success',
@@ -338,108 +352,4 @@ export async function updatePostStatus(
         : 'ステータスの更新に失敗しました'
     };
   }
-}
-
-// Server Action: 記事を公開（便利メソッド）
-export async function publishPost(slug: string): Promise<ActionResult<undefined>> {
-  return updatePostStatus(slug, 'published');
-}
-
-// Server Action: 記事を非公開（便利メソッド）  
-export async function unpublishPost(slug: string): Promise<ActionResult<undefined>> {
-  return updatePostStatus(slug, 'draft');
-}
-
-// Server Action: 一括操作用（複数記事の削除）
-export async function bulkDeletePosts(slugs: string[]): Promise<ActionResult<{
-  success: string[];
-  failed: Array<{ slug: string; error: string }>;
-}>> {
-  const results = {
-    success: [] as string[],
-    failed: [] as Array<{ slug: string; error: string }>,
-  };
-  
-  for (const slug of slugs) {
-    try {
-      await apiFetch(POST_ENDPOINTS.DELETE(slug), {
-        method: 'DELETE',
-      });
-      
-      results.success.push(slug);
-    } catch (error) {
-      results.failed.push({
-        slug,
-        error: error instanceof Error ? error.message : '削除に失敗しました',
-      });
-    }
-  }
-  
-  // キャッシュを更新
-  if (results.success.length > 0) {
-    revalidatePath('/dashboard/posts');
-    revalidatePath('/');
-  }
-  
-  const successCount = results.success.length;
-  const failedCount = results.failed.length;
-  
-  return {
-    status: failedCount === 0 ? 'success' : 'error',
-    message: failedCount === 0
-      ? `${successCount}件の記事を削除しました`
-      : `${successCount}件削除成功、${failedCount}件失敗`,
-    data: results
-  };
-}
-
-// Server Action: 一括ステータス変更
-export async function bulkUpdateStatus(
-  slugs: string[], 
-  status: 'published' | 'draft'
-): Promise<ActionResult<{
-  success: string[];
-  failed: Array<{ slug: string; error: string }>;
-}>> {
-  const results = {
-    success: [] as string[],
-    failed: [] as Array<{ slug: string; error: string }>,
-  };
-  
-  for (const slug of slugs) {
-    try {
-      await apiFetch(POST_ENDPOINTS.UPDATE(slug), {
-        method: 'PATCH',
-        body: JSON.stringify({ status }),
-      });
-      
-      results.success.push(slug);
-    } catch (error) {
-      results.failed.push({
-        slug,
-        error: error instanceof Error ? error.message : 'ステータス変更に失敗しました',
-      });
-    }
-  }
-  
-  // キャッシュを更新
-  if (results.success.length > 0) {
-    revalidatePath('/dashboard/posts');
-    revalidatePath('/');
-    results.success.forEach(slug => {
-      revalidatePath(`/posts/${slug}`);
-    });
-  }
-  
-  const successCount = results.success.length;
-  const failedCount = results.failed.length;
-  const actionText = status === 'published' ? '公開' : '非公開に';
-  
-  return {
-    status: failedCount === 0 ? 'success' : 'error',
-    message: failedCount === 0
-      ? `${successCount}件の記事を${actionText}しました`
-      : `${successCount}件${actionText}成功、${failedCount}件失敗`,
-    data: results
-  };
 }
