@@ -1,16 +1,16 @@
 import Link from 'next/link';
 import { Search, FileText, Calendar, User, AlertCircle, ArrowLeft } from 'lucide-react';
 import { sanitizeSearchQuery } from '@/lib/sanitize';
-import { PostListItem } from '@/types/post';
-import { PaginatedResponse } from '@/types/api';
-import { POST_ENDPOINTS } from '@/types/post';
+import { PostListItem, POST_ENDPOINTS } from '@/types/post';
+import { JSendResponse, PaginatedResponse, isJSendSuccess, isJSendFail, isJSendError } from '@/types/api';
+
+const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 async function searchPosts(query: string): Promise<PaginatedResponse<PostListItem> | { error: string }> {
-  const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
-  
   const params = new URLSearchParams({
     search: query,
-    status: 'published'  // 公開記事のみ検索
+    status: 'published',
+    pageSize: '20'
   });
   
   const url = `${apiUrl}${POST_ENDPOINTS.LIST}?${params}`;
@@ -18,7 +18,7 @@ async function searchPosts(query: string): Promise<PaginatedResponse<PostListIte
   try {
     const response = await fetch(url, {
       headers: {
-        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       cache: 'no-store',
     });
@@ -35,15 +35,29 @@ async function searchPosts(query: string): Promise<PaginatedResponse<PostListIte
       }
     }
 
-    const data = await response.json();
-    
-    // 型チェック
-    if (!Array.isArray(data.results)) {
-      console.error('Invalid API response: results is not an array');
+    const json: JSendResponse<PaginatedResponse<PostListItem>> = await response.json();
+
+    // 型ガードを使用したJSend形式の処理
+    if (isJSendSuccess(json)) {
+      // 成功レスポンス
+      if (json.data.results && Array.isArray(json.data.results)) {
+        return json.data;
+      }
+      console.error('Invalid data format: results is not an array');
       return { error: 'APIレスポンスの形式が不正です' };
+    } else if (isJSendFail(json)) {
+      // バリデーションエラー
+      console.error('Validation error:', json.data);
+      return { error: '検索条件が不正です' };
+    } else if (isJSendError(json)) {
+      // サーバーエラー
+      console.error('Server error:', json.message);
+      return { error: json.message || 'サーバーエラーが発生しました' };
     }
     
-    return data;
+    // 予期しない形式
+    console.error('Unexpected response format:', json);
+    return { error: 'APIレスポンスの形式が不正です' };
   } catch (error) {
     console.error('Search error:', error);
     
@@ -54,6 +68,7 @@ async function searchPosts(query: string): Promise<PaginatedResponse<PostListIte
     return { error: '検索中に予期しないエラーが発生しました' };
   }
 }
+    
 
 interface SearchPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
