@@ -6,7 +6,7 @@ import { AUTH_ENDPOINTS, LoginRequest, LoginResponse, CSRFTokenResponse } from '
 import { JSendResponse, isJSendSuccess, isJSendFail, isJSendError } from '@/types/api';
 
 // 環境変数から取得（クライアント側なのでNEXT_PUBLIC_プレフィックスが必要）
-const DJANGO_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 interface LoginFormProps {
   redirectTo?: string;
@@ -32,7 +32,7 @@ export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
       }
 
       // Cookieにない場合はDjangoから取得
-      const response = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.CSRF}`, {
+      const response = await fetch(`${apiUrl}${AUTH_ENDPOINTS.CSRF}`, {
         method: 'GET',
         credentials: 'include', // Cookieを含める
         headers: {
@@ -62,18 +62,14 @@ export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
     setError(null);
 
     try {
-      console.log('=== クライアント側ログイン処理 ===');
-      console.log('Email:', email);
-
       // CSRFトークンを取得
       const csrfToken = await getCSRFToken();
-      console.log('CSRF Token obtained:', csrfToken ? 'Yes' : 'No');
 
       // ログインリクエストボディ（型定義を使用）
       const requestBody: LoginRequest = { email, password };
 
       // Django APIに直接リクエスト
-      const response = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.LOGIN}`, {
+      const response = await fetch(`${apiUrl}${AUTH_ENDPOINTS.LOGIN}`, {
         method: 'POST',
         credentials: 'include', // ブラウザが自動的にCookieを送信・保存
         headers: {
@@ -84,13 +80,10 @@ export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
         body: JSON.stringify(requestBody),
       });
 
-      console.log('Response status:', response.status);
 
       const data: JSendResponse<LoginResponse> = await response.json();
-      console.log('Response data:', data);
 
       if (response.ok && isJSendSuccess(data)) {
-        console.log('Login successful, redirecting to:', redirectTo);
         
         // ブラウザがSet-Cookieヘッダーを自動的に処理
         // access_tokenとrefresh_tokenが自動的に保存される
@@ -107,17 +100,14 @@ export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
             return `${field}: ${msgArray.join(', ')}`;
           })
           .join('; ');
-        console.log('Validation error:', errors);
         setError(errors || 'ログイン情報が正しくありません');
         setPassword('');
       } else if (isJSendError(data)) {
         // サーバーエラー
-        console.log('Server error:', data.message);
         setError(data.message || 'ログインに失敗しました');
         setPassword('');
       } else {
         // 予期しないレスポンス
-        console.log('Unexpected response');
         setError('ログインに失敗しました');
         setPassword('');
       }

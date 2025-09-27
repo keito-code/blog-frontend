@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AUTH_ENDPOINTS, RegisterRequest, RegisterResponse, CSRFTokenResponse } from '@/types/auth';
 import { JSendResponse, isJSendSuccess, isJSendFail, isJSendError } from '@/types/api';
 
-const DJANGO_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export function RegisterForm() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export function RegisterForm() {
       }
 
       // Cookieにない場合はDjangoから取得
-      const response = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.CSRF}`, {
+      const response = await fetch(`${apiUrl}${AUTH_ENDPOINTS.CSRF}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -75,11 +75,9 @@ export function RegisterForm() {
     }
 
     try {
-      console.log('=== クライアント側登録処理 ===');
       
       // CSRFトークンを取得
       const csrfToken = await getCSRFToken();
-      console.log('CSRF Token obtained:', csrfToken ? 'Yes' : 'No');
 
       // 登録リクエストボディ（型定義を使用）
       const requestBody: RegisterRequest = {
@@ -90,7 +88,7 @@ export function RegisterForm() {
       };
 
       // Django APIに直接リクエスト
-      const response = await fetch(`${DJANGO_API_URL}${AUTH_ENDPOINTS.REGISTER}`, {
+      const response = await fetch(`${apiUrl}${AUTH_ENDPOINTS.REGISTER}`, {
         method: 'POST',
         credentials: 'include', // ブラウザが自動的にCookieを送信・保存
         headers: {
@@ -101,13 +99,10 @@ export function RegisterForm() {
         body: JSON.stringify(requestBody),
       });
 
-      console.log('Response status:', response.status);
 
       const data: JSendResponse<RegisterResponse> = await response.json();
-      console.log('Response data:', data);
 
       if (response.ok && isJSendSuccess(data)) {
-        console.log('Registration successful, redirecting to login');
         router.push('/dashboard');
         router.refresh();
         
@@ -119,15 +114,12 @@ export function RegisterForm() {
             return `${field}: ${msgArray.join(', ')}`;
           })
           .join('\n');
-        console.log('Validation error:', errors);
         setError(errors || '入力内容に誤りがあります');
       } else if (isJSendError(data)) {
         // サーバーエラー
-        console.log('Server error:', data.message);
         setError(data.message || '登録に失敗しました');
       } else {
         // 予期しないレスポンス
-        console.log('Unexpected response');
         setError('登録に失敗しました');
       }
     } catch (error) {
