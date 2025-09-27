@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Search, FileText, Calendar, User, AlertCircle, ArrowLeft } from 'lucide-react';
-import { sanitizeSearchQuery } from '@/lib/sanitize';
+import { sanitizeSearchQuery } from '@/utils/sanitize';
 import { PostListItem, POST_ENDPOINTS } from '@/types/post';
 import { JSendResponse, PaginatedResponse, isJSendSuccess, isJSendFail, isJSendError } from '@/types/api';
 
