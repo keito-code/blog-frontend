@@ -1,23 +1,43 @@
 import Link from 'next/link';
-import { PostDetail } from '@/types/api';
 import { notFound } from 'next/navigation';
+import { PostDetail, POST_ENDPOINTS } from '@/types/post';
 import ServerMarkdownRenderer from '@/components/ServerMarkdownRenderer';
+
+const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 // データ取得関数
 async function getPost(slug: string): Promise<PostDetail | null> {
+
   try {
-    const response = await fetch(
-      `${process.env.DJANGO_API_URL || 'http://localhost:8000'}/api/v1/blog/posts/${slug}/`,
-      {
-        next: { revalidate: 60 }  // 60秒ごとに再検証
+    const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`, {
+        next: { revalidate: 60 },
+        headers: {
+          'Accept': 'application/json',
+        }
       }
     );
+
     
     if (!response.ok) {
+      console.error('Response not ok:', response.status);
       return null;
     }
+
+    const data = await response.json();
+
+    // JSend形式と直接オブジェクト形式の両方に対応
+    if (data && typeof data === 'object') {
+      if ('status' in data && data.status === 'success' && 'data' in data) {
+        // JSend形式
+        return data.data;
+      } else if ('id' in data && 'slug' in data) {
+        // 直接PostDetailオブジェクト
+        return data as PostDetail;
+      }
+    }
     
-    return response.json();
+    console.error('Unexpected response format:', data);
+    return null;
   } catch (error) {
     console.error('Error fetching post:', error);
     return null;
@@ -42,7 +62,8 @@ export default async function PostDetailPage({ params }: Props) {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
-          <Link href="/" className="text-blue-500 hover:underline">
+          <Link href="/posts"
+           className="text-blue-500 hover:underline">
             ← 記事一覧に戻る
           </Link>
         </div>
@@ -65,9 +86,9 @@ export default async function PostDetailPage({ params }: Props) {
           </h1>
 
           <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-8 pb-8 border-b">
-            <div>👤 作成者: {post.author.username}</div>
-            <div>📅 公開日: {new Date(post.publish).toLocaleDateString('ja-JP')}</div>
-            <div>🔄 更新日: {new Date(post.updated).toLocaleDateString('ja-JP')}</div>
+            <div>👤 作成者: {post.authorName}</div>
+            <div>📅 公開日: {new Date(post.createdAt).toLocaleDateString('ja-JP')}</div>
+            <div>🔄 更新日: {new Date(post.updatedAt).toLocaleDateString('ja-JP')}</div>
           </div>
 
           {/* Markdownレンダリングに変更 */}
@@ -75,16 +96,6 @@ export default async function PostDetailPage({ params }: Props) {
             content={post.content}
             // sanitize={true} はデフォルトなので省略可
           />
-
-          {/* コメント機能（API実装後に有効化） */}
-          {post.comments && post.comments.length > 0 && (
-            <div className="mt-8 pt-8 border-t">
-              <p className="text-gray-600 mb-4">
-                💬 コメント: {post.comments.length}件
-              </p>
-              {/* TODO: コメント表示機能はAPI実装後に追加 */}
-            </div>
-          )}
         </div>
       </article>
     </div>
