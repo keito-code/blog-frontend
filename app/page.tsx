@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { POST_ENDPOINTS, PostListItem } from '@/types/post';
+import { Category, CATEGORY_ENDPOINTS } from '@/types/category';
 import { JSendResponse, PaginatedResponse, isJSendSuccess } from '@/types/api';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
@@ -16,7 +17,7 @@ async function getRecentPosts() {
     const response = await fetch(
       `${apiUrl}${POST_ENDPOINTS.LIST}?${params}`,
       {
-        next: { revalidate: 60 },
+        next: { revalidate: 3600 },
         headers:{
           'Accept': 'application/json',
         }
@@ -41,12 +42,52 @@ async function getRecentPosts() {
     return { results: [], count: 0, next: null, previous: null };
   }
 }
+
+// カテゴリー一覧を取得
+async function getCategories() {
+  try {
+    const response = await fetch(
+      `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`,
+      {
+        next: { revalidate: 3600 },
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Failed to fetch categories:', response.status);
+      return [];
+    }
+
+    const json: JSendResponse<Category[]> = await response.json();
     
+    if (isJSendSuccess(json)) {
+      return json.data;
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+}
 
 // メインコンポーネント
 export default async function Home() {
-  const data = await getRecentPosts();
-  const recentPosts = data.results || [];
+  // 並列でデータ取得
+  const [postsData, categories] = await Promise.all([
+    getRecentPosts(),
+    getCategories()
+  ]);
+
+  const recentPosts = postsData.results || [];
+  // 投稿数が多い順に上位6件を取得
+  const topCategories = [...categories]
+    .sort((a, b) => b.post_count - a.post_count)
+    .filter(cat => cat.post_count > 0)  // 投稿があるカテゴリーのみ
+    .slice(0, 6);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -60,13 +101,43 @@ export default async function Home() {
         </p>
       </div>
 
+      {/* カテゴリーセクション */}
+      {topCategories.length > 0 && (
+        <div className="mb-10">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-gray-700">
+              カテゴリー
+            </h2>
+            <Link 
+              href="/categories"
+              className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+            >
+              すべてのカテゴリー →
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {topCategories.map((category) => (
+              <Link
+                key={category.slug}
+                href={`/categories/${category.slug}`}
+                className="bg-gray-100 hover:bg-blue-50 rounded-lg px-4 py-3 text-center transition-colors"
+              >
+                <div className="font-medium text-gray-800">{category.name}</div>
+                <div className="text-xs text-gray-600 mt-1">{category.post_count}件</div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 最新記事セクション */}
       <div className="mb-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold text-gray-700">
             最新の記事
           </h2>
-          {data.count > 6 && (
+          {postsData.count > 6 && (
             <Link 
               href="/posts"
               className="text-blue-600 hover:text-blue-800 font-medium"
@@ -84,6 +155,16 @@ export default async function Home() {
                 key={post.id} 
                 className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6"
               >
+                {/* カテゴリータグ */}
+                {post.category && (
+                  <Link
+                    href={`/categories/${post.category.slug}`}
+                    className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full mb-3 hover:bg-blue-200"
+                  >
+                    {post.category.name}
+                  </Link>
+                )}
+
                 <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">
                   {post.title}
                 </h3>
@@ -118,10 +199,10 @@ export default async function Home() {
           記事一覧
         </Link>
         <Link
-          href="/posts?search="
+          href="/categories"
           className="px-6 py-3 bg-white text-gray-800 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
         >
-          記事を検索
+          カテゴリー一覧
         </Link>
       </div>
     </div>
