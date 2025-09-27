@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import Pagination from '@/components/Pagination';
-import { PostListItem, POST_ENDPOINTS, PostQueryParams } from '@/types/post';
+import { PostListItem, POST_ENDPOINTS } from '@/types/post';
 import { JSendResponse, PaginatedResponse, isJSendSuccess } from '@/types/api';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
