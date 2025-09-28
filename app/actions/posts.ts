@@ -3,7 +3,12 @@
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { POST_ENDPOINTS, PostDetail } from '@/types/post';
+import { 
+  POST_ENDPOINTS, 
+  PostDetail, 
+  PostCreateInput, 
+  PostUpdateInput 
+} from '@/types/post';
 import { 
   JSendResponse, 
   isJSendSuccess, 
@@ -167,6 +172,7 @@ export async function createPost(formData: FormData): Promise<void> {
   const title = formData.get('title') as string;
   const content = formData.get('content') as string;
   const status = formData.get('status') as string;
+  const categoryId = formData.get('category_id') as string;
 
   // バリデーション
   if (!title?.trim()) {
@@ -177,6 +183,18 @@ export async function createPost(formData: FormData): Promise<void> {
   }
 
   try {
+    // PostCreateInput型に準拠したリクエストボディを構築
+    const requestBody: PostCreateInput = {
+      title,
+      content,
+      status: status as 'draft' | 'published',
+    };
+    
+    // カテゴリーIDが選択されていれば追加
+    if (categoryId) {
+      requestBody.categoryId = parseInt(categoryId, 10);
+    }
+
     await apiFetch<PostDetail>(POST_ENDPOINTS.CREATE, {
       method: 'POST',
       body: JSON.stringify({ title, content, status }),
@@ -200,6 +218,7 @@ export async function createPost(formData: FormData): Promise<void> {
 
   // 成功時の処理（try-catchの外）
   revalidatePath('/dashboard/posts');
+  revalidatePath('/categories');
   
   // 公開記事の場合のみ公開ページを更新
   if (status === 'published') {
@@ -220,6 +239,7 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
   const title = formData.get('title') as string;
   const content = formData.get('content') as string;
   const status = formData.get('status') as string;
+  const categoryId = formData.get('category_id') as string;
 
   // バリデーション
   if (!title?.trim()) {
@@ -230,6 +250,18 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
   }
 
   try {
+    // PostUpdateInput型に準拠したリクエストボディを構築
+    const requestBody: PostUpdateInput = {
+      title,
+      content,
+      status: status as 'draft' | 'published',
+    };
+    
+    // カテゴリーIDの処理（空文字の場合はnullを送信）
+    if (categoryId !== undefined) {
+      requestBody.categoryId = categoryId ? parseInt(categoryId, 10) : null;
+    }
+
     await apiFetch<PostDetail>(POST_ENDPOINTS.UPDATE(slug), {
       method: 'PATCH',
       body: JSON.stringify({ title, content, status }),
@@ -256,6 +288,7 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
   // 成功時の処理
   revalidatePath('/dashboard/posts');
   revalidatePath(`/posts/${slug}`);
+  revalidatePath('/categories');
 
   // 公開記事の場合のみ、ホームと一覧を更新
   if (status === 'published') {

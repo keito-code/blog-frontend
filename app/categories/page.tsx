@@ -68,7 +68,7 @@ export default async function CategoriesPage() {
                 <span className="text-sm text-gray-500">
                   {category.post_count === 0 
                     ? '記事はありません'
-                    : `${category.post_count} 件の記事`
+                    : `${category.post_count !== undefined ? category.post_count : 0} 件の記事`
                   }
                 </span>
                 <span className="text-blue-600 hover:text-blue-800">

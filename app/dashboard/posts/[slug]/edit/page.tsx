@@ -3,23 +3,24 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/auth';
 import { updatePost } from '@/app/actions/posts';
 import { PostDetail, POST_ENDPOINTS } from '@/types/post';
+import { Category, CATEGORY_ENDPOINTS } from '@/types/category';
+import { JSendResponse, isJSendSuccess } from '@/types/api';
 import { cookies } from 'next/headers';
 
+const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 interface EditPostPageProps {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }
 
 export async function generateMetadata({ params }: EditPostPageProps): Promise<Metadata> {
-  const { slug } = await params;
   return {
     title: `記事編集 | My Blog`,
-    description: `記事を編集: ${slug}`,
+    description: `記事を編集: ${params.slug}`,
   };
 }
 
 async function getPostBySlug(slug: string): Promise<PostDetail | null> {
-  const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll()
     .map(cookie => `${cookie.name}=${cookie.value}`)
@@ -58,6 +59,36 @@ async function getPostBySlug(slug: string): Promise<PostDetail | null> {
   }
 }
 
+async function getCategories(): Promise<Category[]> {
+  try {
+    const response = await fetch(
+      `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`,
+      {
+        next: { revalidate: 3600 },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      console.error('Failed to fetch categories:', response.status);
+      return [];
+    }
+    
+    const json: JSendResponse<Category[]> = await response.json();
+    
+    if (isJSendSuccess(json)) {
+      return json.data;
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+}
+
 export default async function EditPostPage({ params }: EditPostPageProps) {
   // Next.js 15のparams処理
   const { slug } = await params;
@@ -68,8 +99,11 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
     redirect('/auth/login');
   }
 
-  // 記事データを取得
-  const post = await getPostBySlug(slug);
+  // 記事データとカテゴリー一覧を並列で取得
+  const [post, categories] = await Promise.all([
+    getPostBySlug(slug),
+    getCategories()
+  ]);
   
   if (!post) {
     redirect('/dashboard/posts?error=記事が見つかりません');
@@ -134,6 +168,31 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
             />
           </div>
 
+          <div className="mb-6">
+            <label 
+              htmlFor="categoryId" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              カテゴリー
+            </label>
+            <select
+              id="categoryId"
+              name="categoryId"
+              defaultValue={post.category?.id || ''}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">カテゴリーなし</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-sm text-gray-500">
+              現在のカテゴリー: {post.category ? post.category.name : 'なし'}
+            </p>
+          </div>
+
           {/* 本文 */}
           <div className="mb-6">
             <label 
@@ -152,7 +211,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
               placeholder="記事の内容を入力"
             />
             <p className="mt-1 text-sm text-gray-500">
-              * HTMLタグが使用できます（サニタイズされます）
+              * HTMLタグが使用できます
             </p>
           </div>
 
@@ -177,21 +236,6 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
               現在のステータス: {post.status === 'published' ? '公開中' : '下書き'}
             </p>
           </div>
-
-          {/* カテゴリー情報（読み取り専用） */}
-          {post.category && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                カテゴリー
-              </label>
-              <div className="px-3 py-2 bg-gray-100 rounded-lg text-gray-600">
-                {post.category.name}
-              </div>
-              <p className="mt-1 text-sm text-gray-500">
-                ※ カテゴリーの変更は現在サポートされていません
-              </p>
-            </div>
-          )}
 
           {/* ボタン */}
           <div className="flex gap-4 justify-end">

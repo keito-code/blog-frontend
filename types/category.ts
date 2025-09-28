@@ -16,7 +16,7 @@ export interface Category {
     id: number;
     name: string;
     slug: string;
-    post_count: number;
+    postCount: number;
   }
   
   /**

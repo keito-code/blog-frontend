@@ -54,6 +54,7 @@ export interface PostCreateInput {
   title: string;      // 3文字以上（サニタイズされる）
   content: string;    // HTMLコンテンツ（サニタイズされる）
   status?: 'draft' | 'published';  // デフォルトは'draft'
+  categoryId?: number | null;     // カテゴリーID（任意）
 }
 
 /**
@@ -64,6 +65,7 @@ export interface PostUpdateInput {
   title?: string;     // 3文字以上（サニタイズされる）
   content?: string;   // HTMLコンテンツ（サニタイズされる）
   status?: 'draft' | 'published';
+  categoryId?: number | null;
 }
 
 // ============================================

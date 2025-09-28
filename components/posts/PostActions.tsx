@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { publishPost, unpublishPost, deletePost } from '@/app/actions/posts';
+import { updatePostStatus, deletePost } from '@/app/actions/posts';
 import { PostListItem } from '@/types/post';
 
 interface PostActionsProps {
@@ -16,8 +16,12 @@ export function PostActions({ post }: PostActionsProps) {
     if (!confirm('この記事を公開しますか？')) return;
     
     try {
-      await publishPost(post.slug);
-      router.refresh(); // サーバーコンポーネントを再実行
+      const result = await updatePostStatus(post.slug, 'published');
+      if (result.status === 'success') {
+        router.refresh(); // サーバーコンポーネントを再実行
+      } else {
+        alert(result.message || '公開に失敗しました');
+      }
     } catch (error) {
       // NEXT_REDIRECTは正常な動作なので無視
       if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
@@ -33,8 +37,12 @@ export function PostActions({ post }: PostActionsProps) {
     if (!confirm('この記事を下書きに戻しますか？')) return;
     
     try {
-      await unpublishPost(post.slug);
-      router.refresh();
+      const result = await updatePostStatus(post.slug, 'draft');
+      if (result.status === 'success') {
+        router.refresh();
+      } else {
+        alert(result.message || '操作に失敗しました');
+      }
     } catch (error) {
       // NEXT_REDIRECTは正常な動作なので無視
       if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
@@ -50,8 +58,12 @@ export function PostActions({ post }: PostActionsProps) {
     if (!confirm('この記事を削除しますか？この操作は取り消せません。')) return;
     
     try {
-      await deletePost(post.slug);
-      router.refresh();
+      const result = await deletePost(post.slug);
+      if (result.status === 'success') {
+        router.refresh();
+      } else {
+        alert(result.message || '削除に失敗しました');
+      }
     } catch (error) {
       // NEXT_REDIRECTは正常な動作なので無視
       if (error instanceof Error && error.message === 'NEXT_REDIRECT') {

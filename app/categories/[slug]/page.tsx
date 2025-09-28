@@ -79,18 +79,20 @@ async function getCategoryPosts(
 }
 
 interface PageProps {
-  params: { slug: string };
-  searchParams: { page?: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }
 
 export default async function CategoryPostsPage({ params, searchParams }: PageProps) {
-  const currentPage = Number(searchParams.page) || 1;
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const currentPage = Number(resolvedSearchParams.page) || 1;
   const pageSize = 10;
 
   // カテゴリー情報と投稿を並列で取得
   const [category, postsData] = await Promise.all([
-    getCategory(params.slug),
-    getCategoryPosts(params.slug, currentPage, pageSize),
+    getCategory(resolvedParams.slug),
+    getCategoryPosts(resolvedParams.slug, currentPage, pageSize),
   ]);
 
   if (!category) {
@@ -173,7 +175,7 @@ export default async function CategoryPostsPage({ params, searchParams }: PagePr
               {/* 前へボタン */}
               {currentPage > 1 && (
                 <Link
-                  href={`/categories/${params.slug}?page=${currentPage - 1}`}
+                  href={`/categories/${resolvedParams.slug}?page=${currentPage - 1}`}
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
                   ← 前へ
@@ -197,7 +199,7 @@ export default async function CategoryPostsPage({ params, searchParams }: PagePr
                   return (
                     <Link
                       key={pageNum}
-                      href={`/categories/${params.slug}?page=${pageNum}`}
+                      href={`/categories/${resolvedParams.slug}?page=${pageNum}`}
                       className={`px-3 py-1 rounded ${
                         pageNum === currentPage
                           ? 'bg-blue-600 text-white'
@@ -213,7 +215,7 @@ export default async function CategoryPostsPage({ params, searchParams }: PagePr
               {/* 次へボタン */}
               {currentPage < totalPages && (
                 <Link
-                  href={`/categories/${params.slug}?page=${currentPage + 1}`}
+                  href={`/categories/${resolvedParams.slug}?page=${currentPage + 1}`}
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
                   次へ →

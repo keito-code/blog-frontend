@@ -2,11 +2,46 @@ import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/auth';
 import { createPost } from '@/app/actions/posts';
+import { CATEGORY_ENDPOINTS, Category } from '@/types/category';
+import { JSendResponse, isJSendSuccess } from '@/types/api';
 
 export const metadata: Metadata = {
   title: '新規投稿 | Django Blog',
   description: '新しい記事を作成',
 };
+
+const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
+
+async function getCategories(): Promise<Category[]> {
+  try {
+    const response = await fetch(
+      `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`,
+      {
+        next: { revalidate: 3600 },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      console.error('Failed to fetch categories:', response.status);
+      return [];
+    }
+    
+    const json: JSendResponse<Category[]> = await response.json();
+    
+    if (isJSendSuccess(json)) {
+      return json.data;
+    }
+    
+    console.error('Failed to fetch categories:', json);
+    return [];
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+}
 
 export default async function NewPostPage() {
   // サーバーサイドで認証チェック
@@ -15,6 +50,8 @@ export default async function NewPostPage() {
   if (!user) {
     redirect('/auth/login');
   }
+
+  const categories = await getCategories();
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -42,6 +79,30 @@ export default async function NewPostPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="記事のタイトルを入力"
             />
+          </div>
+
+          <div className="mb-6">
+            <label 
+              htmlFor="categoryId" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              カテゴリー
+            </label>
+            <select
+              id="categoryId"
+              name="categoryId"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">カテゴリーを選択（任意）</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-sm text-gray-500">
+              記事をカテゴリーに分類できます
+            </p>
           </div>
 
           <div className="mb-6">
