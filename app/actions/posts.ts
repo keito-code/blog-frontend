@@ -172,7 +172,7 @@ export async function createPost(formData: FormData): Promise<void> {
   const title = formData.get('title') as string;
   const content = formData.get('content') as string;
   const status = formData.get('status') as string;
-  const categoryId = formData.get('category_id') as string;
+  const categoryId = formData.get('categoryId') as string;
 
   // バリデーション
   if (!title?.trim()) {
@@ -197,7 +197,7 @@ export async function createPost(formData: FormData): Promise<void> {
 
     await apiFetch<PostDetail>(POST_ENDPOINTS.CREATE, {
       method: 'POST',
-      body: JSON.stringify({ title, content, status }),
+      body: JSON.stringify(requestBody),
     });
         
   } catch (error) {
@@ -239,7 +239,7 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
   const title = formData.get('title') as string;
   const content = formData.get('content') as string;
   const status = formData.get('status') as string;
-  const categoryId = formData.get('category_id') as string;
+  const categoryId = formData.get('categoryId') as string;
 
   // バリデーション
   if (!title?.trim()) {
@@ -264,7 +264,7 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
 
     await apiFetch<PostDetail>(POST_ENDPOINTS.UPDATE(slug), {
       method: 'PATCH',
-      body: JSON.stringify({ title, content, status }),
+      body: JSON.stringify(requestBody),
     });
     
   } catch (error) {

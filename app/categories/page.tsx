@@ -39,7 +39,7 @@ export default async function CategoriesPage() {
   const categories = await getCategories();
 
   // 投稿数でソート（多い順）
-  const sortedCategories = [...categories].sort((a, b) => b.post_count - a.post_count);
+  const sortedCategories = [...categories].sort((a, b) => b.postCount - a.postCount);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -57,18 +57,18 @@ export default async function CategoriesPage() {
             >
               <div className="flex justify-between items-start mb-2">
                 <h2 className="text-xl font-semibold">{category.name}</h2>
-                {category.post_count > 0 && (
+                {category.postCount > 0 && (
                   <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                    {category.post_count}
+                    {category.postCount}
                   </span>
                 )}
               </div>
               
               <div className="flex items-center justify-between mt-4">
                 <span className="text-sm text-gray-500">
-                  {category.post_count === 0 
+                  {category.postCount === 0 
                     ? '記事はありません'
-                    : `${category.post_count !== undefined ? category.post_count : 0} 件の記事`
+                    : `${category.postCount !== undefined ? category.postCount : 0} 件の記事`
                   }
                 </span>
                 <span className="text-blue-600 hover:text-blue-800">

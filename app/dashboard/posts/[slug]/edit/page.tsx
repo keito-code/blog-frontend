@@ -10,13 +10,14 @@ import { cookies } from 'next/headers';
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 interface EditPostPageProps {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
-export async function generateMetadata({ params }: EditPostPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: EditPostPageProps) {
+  const resolvedParams = await params;
   return {
     title: `記事編集 | My Blog`,
-    description: `記事を編集: ${params.slug}`,
+    description: `記事を編集: ${resolvedParams.slug}`,
   };
 }
 
@@ -90,7 +91,6 @@ async function getCategories(): Promise<Category[]> {
 }
 
 export default async function EditPostPage({ params }: EditPostPageProps) {
-  // Next.js 15のparams処理
   const { slug } = await params;
   
   // 認証チェック
@@ -101,7 +101,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
 
   // 記事データとカテゴリー一覧を並列で取得
   const [post, categories] = await Promise.all([
-    getPostBySlug(slug),
+    getPostBySlug(slug), 
     getCategories()
   ]);
   
