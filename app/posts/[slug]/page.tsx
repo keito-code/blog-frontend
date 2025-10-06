@@ -23,20 +23,13 @@ async function getPost(slug: string): Promise<PostDetail | null> {
       return null;
     }
 
-    const data = await response.json();
+    const json = await response.json();
 
-    // JSend形式と直接オブジェクト形式の両方に対応
-    if (data && typeof data === 'object') {
-      if ('status' in data && data.status === 'success' && 'data' in data) {
-        // JSend形式
-        return data.data;
-      } else if ('id' in data && 'slug' in data) {
-        // 直接PostDetailオブジェクト
-        return data as PostDetail;
-      }
+    if (json.status === 'success' && json.data?.post) {
+      return json.data.post;
     }
-    
-    console.error('Unexpected response format:', data);
+
+    console.error('API error:', json);
     return null;
   } catch (error) {
     console.error('Error fetching post:', error);
@@ -50,10 +43,15 @@ type Props = {
 };
 
 export default async function PostDetailPage({ params }: Props) {
-
   const resolvedParams = await params; 
+
   const post = await getPost(resolvedParams.slug);
 
+  if (!post) {
+    console.error('Post is null, returning 404');
+    notFound();
+  }
+  
   if (!post || post.status !=='published') {
     notFound(); // 404ページへ
   }

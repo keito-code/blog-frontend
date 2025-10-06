@@ -1,12 +1,11 @@
 import Link from 'next/link';
-import { POST_ENDPOINTS, PostListItem } from '@/types/post';
-import { Category, CATEGORY_ENDPOINTS } from '@/types/category';
-import { JSendResponse, PaginatedResponse, isJSendSuccess } from '@/types/api';
+import { POST_ENDPOINTS, PostListItem, PostListData } from '@/types/post';
+import { CATEGORY_ENDPOINTS, CategoryListData } from '@/types/category';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 // データ取得関数（最新6件のみ）
-async function getRecentPosts() {
+async function getRecentPosts(): Promise<PostListData | null> {
   const params = new URLSearchParams({
     status: 'published',
     pageSize: '6',
@@ -26,25 +25,25 @@ async function getRecentPosts() {
     
     if (!response.ok) {
       console.error('Failed to fetch posts:', response.status);
-      return { results: [], count: 0, next: null, previous: null };
+      return null;
     }
 
-    const json: JSendResponse<PaginatedResponse<PostListItem>> = await response.json();
-    
-    if (isJSendSuccess(json)) {
+    const json = await response.json();
+
+    if (json.status === 'success' && json.data) {
       return json.data;
     }
     
     console.error('API error:', json);
-    return { results: [], count: 0, next: null, previous: null };
+    return null;
   } catch (error) {
     console.error('Error fetching posts:', error);
-    return { results: [], count: 0, next: null, previous: null };
+    return null;
   }
 }
 
 // カテゴリー一覧を取得
-async function getCategories() {
+async function getCategories(): Promise<CategoryListData | null> {
   try {
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`,
@@ -58,35 +57,38 @@ async function getCategories() {
 
     if (!response.ok) {
       console.error('Failed to fetch categories:', response.status);
-      return [];
+      return null;
     }
 
-    const json: JSendResponse<Category[]> = await response.json();
-    
-    if (isJSendSuccess(json)) {
+    const json = await response.json();
+
+    if (json.status === 'success' && json.data) {
       return json.data;
     }
     
-    return [];
+    console.error('API error:', json);
+    return null;
   } catch (error) {
     console.error('Error fetching categories:', error);
-    return [];
+    return null;
   }
 }
 
 // メインコンポーネント
 export default async function Home() {
   // 並列でデータ取得
-  const [postsData, categories] = await Promise.all([
+  const [postsData, categoriesData] = await Promise.all([
     getRecentPosts(),
     getCategories()
   ]);
 
-  const recentPosts = postsData.results || [];
+  const recentPosts = postsData?.posts ?? [];
+  const totalCount = postsData?.pagination?.count ?? 0;
+  const categories = categoriesData?.categories ?? [];
   // 投稿数が多い順に上位6件を取得
   const topCategories = [...categories]
-    .sort((a, b) => b.post_count - a.post_count)
-    .filter(cat => cat.post_count > 0)  // 投稿があるカテゴリーのみ
+    .sort((a, b) => b.postCount - a.postCount)
+    .filter(cat => cat.postCount > 0)  // 投稿があるカテゴリーのみ
     .slice(0, 6);
 
   return (
@@ -124,7 +126,7 @@ export default async function Home() {
                 className="bg-gray-100 hover:bg-blue-50 rounded-lg px-4 py-3 text-center transition-colors"
               >
                 <div className="font-medium text-gray-800">{category.name}</div>
-                <div className="text-xs text-gray-600 mt-1">{category.post_count}件</div>
+                <div className="text-xs text-gray-600 mt-1">{category.postCount}件</div>
               </Link>
             ))}
           </div>
@@ -137,7 +139,7 @@ export default async function Home() {
           <h2 className="text-2xl font-semibold text-gray-700">
             最新の記事
           </h2>
-          {postsData.count > 6 && (
+          {totalCount > 6 && (
             <Link 
               href="/posts"
               className="text-blue-600 hover:text-blue-800 font-medium"

@@ -4,6 +4,8 @@
  * 
  * 注意: バックエンドはsnake_case、フロントエンドはcamelCaseに自動変換される
  */
+import { PaginatedResponse } from './api';
+import { PostListItem } from './post';
 
 // ============================================
 // カテゴリモデル
@@ -18,15 +20,7 @@ export interface Category {
     slug: string;
     postCount: number;
   }
-  
-  /**
-   * CategoryWithCount - 投稿数を含むカテゴリ
-   * annotateで追加されるpostCountを含む
-   */
-  export interface CategoryWithCount extends Category {
-    postCount?: number;  // 公開済み投稿数（annotateで追加）
-  }
-  
+    
   // ============================================
   // リクエスト型
   // ============================================
@@ -47,6 +41,35 @@ export interface Category {
   export interface CategoryUpdateInput {
     name?: string;
   }
+
+  // ============================================
+// JSend レスポンスデータ型
+// ============================================
+
+/**
+ * カテゴリ一覧APIレスポンスのdata部分
+ * GET /v1/categories/
+ */
+export interface CategoryListData {
+  categories: Category[];  // 複数形（ページネーションなし）
+}
+
+/**
+ * カテゴリ詳細APIレスポンスのdata部分
+ * GET /v1/categories/{slug}/
+ */
+export interface CategoryDetailData {
+  category: Category;  // 単数形
+}
+
+/**
+ * カテゴリ別記事一覧APIレスポンスのdata部分
+ * GET /v1/categories/{slug}/posts/
+ */
+export interface CategoryPostsData {
+  posts: PostListItem[];  // 複数形
+  pagination: PaginatedResponse;
+}
   
   // ============================================
   // エンドポイント定数

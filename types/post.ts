@@ -6,6 +6,8 @@
  */
 
 import { Category } from './category';
+import { PaginatedResponse } from './api';
+
 
 // ============================================
 // 投稿モデル
@@ -83,6 +85,43 @@ export interface PostQueryParams {
   author?: string;      // ユーザーID
   category?: string;    // カテゴリーslug
   ordering?: string;    // -createdAt, -updatedAt, createdAt, updatedAt
+}
+
+// ============================================
+// JSend レスポンスデータ型
+// ============================================
+
+/**
+ * 記事一覧APIレスポンスのdata部分
+ * GET /v1/posts/
+ */
+export interface PostListData {
+  posts: PostListItem[];  // 複数形
+  pagination: PaginatedResponse;
+}
+
+/**
+ * 記事詳細APIレスポンスのdata部分
+ * GET /v1/posts/{slug}/
+ */
+export interface PostDetailData {
+  post: PostDetail;  // 単数形
+}
+
+/**
+ * 記事作成APIレスポンスのdata部分
+ * POST /v1/posts/
+ */
+export interface PostCreateData {
+  post: PostDetail;  // 単数形（作成後の詳細を返す）
+}
+
+/**
+ * 記事更新APIレスポンスのdata部分
+ * PATCH /v1/posts/{slug}/
+ */
+export interface PostUpdateData {
+  post: PostDetail;  // 単数形（更新後の詳細を返す）
 }
 
 // ============================================

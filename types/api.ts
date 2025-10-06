@@ -29,11 +29,13 @@ export type JSendResponse<T> = JSendSuccess<T> | JSendFail | JSendError;
 // ページネーション型定義
 // ============================================
 
-export interface PaginatedResponse<T> {
+export interface PaginatedResponse {
   count: number;
+  page: number; 
+  pageSize: number;
+  totalPages: number;
   next: string | null;
   previous: string | null;
-  results: T[];
 }
 
 // ============================================
@@ -97,6 +99,8 @@ export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
   FORBIDDEN: 'FORBIDDEN',
   NOT_FOUND: 'NOT_FOUND',
+  METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
+  TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
   SERVER_ERROR: 'SERVER_ERROR',
 } as const;
 

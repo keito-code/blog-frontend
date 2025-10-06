@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { PostListItem, POST_ENDPOINTS } from '@/types/post';
-import { JSendResponse, PaginatedResponse, isJSendSuccess } from '@/types/api';
+import {  POST_ENDPOINTS, PostListData } from '@/types/post';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
@@ -15,7 +14,7 @@ interface PageProps {
 }
 
 // データ取得関数
-async function getPosts(params: SearchParams): Promise<PaginatedResponse<PostListItem>> {
+async function getPosts(params: SearchParams): Promise<PostListData | null> {
   const queryParams = new URLSearchParams({
     page: params.page || '1',
     pageSize: params.pageSize || '10',
@@ -35,21 +34,23 @@ async function getPosts(params: SearchParams): Promise<PaginatedResponse<PostLis
     
     if (!response.ok) {
       console.error('Failed to fetch posts:', response.status);
-      return { results: [], count: 0, next: null, previous: null };
+      return null;
     }
 
-    const json: JSendResponse<PaginatedResponse<PostListItem>> = await response.json();
+    const json = await response.json();
 
-    if (isJSendSuccess(json)) {
+    if (json.status === 'success' && json.data) {
       return json.data;
     }
-    
-    return { results: [], count: 0, next: null, previous: null };
+
+    console.error('API error:', json);
+    return null;
   } catch (error) {
     console.error('Error fetching posts:', error);
-    return { results: [], count: 0, next: null, previous: null };
+    return null;
   }
 }
+    
 
 // ローディングコンポーネント
 function PostsLoading() {
@@ -73,11 +74,14 @@ function PostsLoading() {
 async function PostsList({ searchParams }: PageProps) {
   const resolvedParams = await searchParams;
   const data = await getPosts(resolvedParams);
+  const posts = data?.posts ?? [];
+  const pagination = data?.pagination;
   const currentPage = Number(resolvedParams.page) || 1;
   const pageSize = Number(resolvedParams.pageSize) || 10;
-  const totalPages = Math.ceil(data.count / pageSize);
+  const totalPages = pagination?.totalPages ?? 0;
+  const totalCount = pagination?.count ?? 0;
   
-  if (!data || data.results.length === 0) {
+  if (posts.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-600 text-lg">
@@ -92,19 +96,19 @@ async function PostsList({ searchParams }: PageProps) {
       {/* 検索結果の情報 */}
       <div className="mb-6 text-sm text-gray-600">
         <p>
-          全 <span className="font-semibold">{data.count}</span> 件中{' '}
+          全 <span className="font-semibold">{totalCount}</span> 件中{' '}
           <span className="font-semibold">
             {(currentPage - 1) * pageSize + 1}
           </span> - {' '}
           <span className="font-semibold">
-            {Math.min(currentPage * pageSize, data.count)}
+            {Math.min(currentPage * pageSize, totalCount)}
           </span> 件を表示
         </p>
       </div>
       
       {/* 記事リスト */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
-        {data.results.map((post) => (
+        {posts.map((post) => (
           <article key={post.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
             <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">
               {post.title}
