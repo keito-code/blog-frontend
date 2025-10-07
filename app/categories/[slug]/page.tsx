@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Category, CATEGORY_ENDPOINTS } from '@/types/category';
+import { CategoryDetailData, CategoryPostsData, CATEGORY_ENDPOINTS } from '@/types/category';
 import { PostListItem } from '@/types/post';  
-import { JSendResponse, PaginatedResponse, isJSendSuccess } from '@/types/api';
+import { JSendResponse } from '@/types/api';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-async function getCategory(slug: string): Promise<Category | null> {
+async function getCategory(slug: string) {
   try {
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.DETAIL(slug)}`,
@@ -26,10 +26,10 @@ async function getCategory(slug: string): Promise<Category | null> {
       return null;
     }
 
-    const json: JSendResponse<Category> = await response.json();
-    
-    if (isJSendSuccess(json)) {
-      return json.data;
+    const json: JSendResponse<CategoryDetailData> = await response.json();
+
+    if (json.status === 'success' && json.data?.category) {
+      return json.data.category;
     }
     
     return null;
@@ -43,7 +43,7 @@ async function getCategoryPosts(
   slug: string,
   page: number = 1,
   pageSize: number = 10
-): Promise<PaginatedResponse<PostListItem> | null> {  
+) {  
   try {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -65,9 +65,9 @@ async function getCategoryPosts(
       return null;
     }
 
-    const json: JSendResponse<PaginatedResponse<PostListItem>> = await response.json();
-    
-    if (isJSendSuccess(json)) {
+    const json: JSendResponse<CategoryPostsData> = await response.json();
+
+    if (json.status === 'success' && json.data?.posts && json.data?.pagination) {
       return json.data;
     }
     
@@ -99,8 +99,9 @@ export default async function CategoryPostsPage({ params, searchParams }: PagePr
     notFound();
   }
 
-  const posts = postsData?.results || [];
-  const totalPages = postsData ? Math.ceil(postsData.count / pageSize) : 0;
+  const posts = postsData?.posts || [];
+  const pagination = postsData?.pagination;
+  const totalPages = pagination ? pagination.totalPages : 0;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -127,9 +128,9 @@ export default async function CategoryPostsPage({ params, searchParams }: PagePr
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">{category.name}</h1>
         <p className="text-gray-600">
-          {postsData?.count === 0
+          {pagination?.count === 0
             ? 'このカテゴリーには記事がありません'
-            : `${postsData?.count || 0} 件の記事`
+            : `${pagination?.count || 0} 件の記事`
           }
         </p>
       </div>

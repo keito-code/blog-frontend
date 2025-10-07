@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { Category, CATEGORY_ENDPOINTS } from '@/types/category';
-import { JSendResponse, isJSendSuccess } from '@/types/api';
+import { CategoryListData, CATEGORY_ENDPOINTS } from '@/types/category';
+import { JSendResponse } from '@/types/api';
 
 const apiUrl= process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-async function getCategories(): Promise<Category[]> {
+async function getCategories() {
   try {
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`,
@@ -18,25 +18,35 @@ async function getCategories(): Promise<Category[]> {
 
     if (!response.ok) {
       console.error('Failed to fetch categories:', response.status);
-      return [];
+      return null;
     }
 
-    const json: JSendResponse<Category[]> = await response.json();
-    
-    if (isJSendSuccess(json)) {
-      return json.data;
+    const json: JSendResponse<CategoryListData> = await response.json();
+
+    if (json.status === 'success' && json.data?.categories) {
+      return json.data.categories;
     }
     
+    
     console.error('API returned error:', json);
-    return [];
+    return null;
   } catch (error) {
     console.error('Error fetching categories:', error);
-    return [];
+    return null;
   }
 }
 
 export default async function CategoriesPage() {
   const categories = await getCategories();
+
+  if (!categories) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold mb-8">カテゴリー</h1>
+        <p className="text-gray-600">カテゴリーの読み込みに失敗しました。</p>
+      </div>
+    );
+  }
 
   // 投稿数でソート（多い順）
   const sortedCategories = [...categories].sort((a, b) => b.postCount - a.postCount);
