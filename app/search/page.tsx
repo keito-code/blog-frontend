@@ -2,11 +2,15 @@ import Link from 'next/link';
 import { Search, FileText, Calendar, User, AlertCircle, ArrowLeft } from 'lucide-react';
 import { sanitizeSearchQuery } from '@/utils/sanitize';
 import { PostListItem, POST_ENDPOINTS } from '@/types/post';
-import { JSendResponse, PaginatedResponse, isJSendSuccess, isJSendFail, isJSendError } from '@/types/api';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
-async function searchPosts(query: string): Promise<PaginatedResponse<PostListItem> | { error: string }> {
+interface SearchResult {
+  posts: PostListItem[];
+  count: number;
+}
+
+async function searchPosts(query: string): Promise<SearchResult | { error: string }> {
   const params = new URLSearchParams({
     search: query,
     status: 'published',
@@ -35,21 +39,18 @@ async function searchPosts(query: string): Promise<PaginatedResponse<PostListIte
       }
     }
 
-    const json: JSendResponse<PaginatedResponse<PostListItem>> = await response.json();
+    const json = await response.json();
 
-    // 型ガードを使用したJSend形式の処理
-    if (isJSendSuccess(json)) {
-      // 成功レスポンス
-      if (json.data.results && Array.isArray(json.data.results)) {
-        return json.data;
-      }
-      console.error('Invalid data format: results is not an array');
-      return { error: 'APIレスポンスの形式が不正です' };
-    } else if (isJSendFail(json)) {
+    if (json.status === 'success' && json.data?.posts && json.data?.pagination) {
+      return {
+        posts: json.data.posts,
+        count: json.data.pagination.count
+      };
+    } else if (json.status === 'fail') {
       // バリデーションエラー
       console.error('Validation error:', json.data);
       return { error: '検索条件が不正です' };
-    } else if (isJSendError(json)) {
+    } else if (json.status === 'error') {
       // サーバーエラー
       console.error('Server error:', json.message);
       return { error: json.message || 'サーバーエラーが発生しました' };
@@ -152,8 +153,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     );
   }
 
-  const searchResults = searchResult as PaginatedResponse<PostListItem>;
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* 検索ヘッダー */}
@@ -163,8 +162,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </h1>
         <div className="flex items-center justify-between">
           <p className="text-gray-600">
-            {searchResults.count > 0 
-              ? `${searchResults.count}件の記事が見つかりました`
+            {searchResult.count > 0 
+              ? `${searchResult.count}件の記事が見つかりました`
               : '記事が見つかりませんでした'
             }
           </p>
@@ -178,9 +177,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       </div>
 
       {/* 検索結果 */}
-      {searchResults.count > 0 ? (
+      {searchResult.count > 0 ? (
         <div className="space-y-6">
-          {searchResults.results.map((post) => (
+          {searchResult.posts.map((post) => (
             <article
               key={post.id}
               className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200"
@@ -220,7 +219,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </div>
       ) : (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
-          {/* 検索結果なしの表示（省略） */}
+          <Search className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+          <p className="text-gray-600 mb-6">
+            「{displayQuery}」に一致する記事が見つかりませんでした
+          </p>
+          <div className="space-y-2 text-sm text-gray-500">
+            <p>• 別のキーワードで検索してみてください</p>
+            <p>• より一般的な単語を使ってみてください</p>
+          </div>
         </div>
       )}
     </div>

@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/auth';
 import { createPost } from '@/app/actions/posts';
 import { CATEGORY_ENDPOINTS, Category } from '@/types/category';
-import { JSendResponse, isJSendSuccess } from '@/types/api';
 
 export const metadata: Metadata = {
   title: '新規投稿 | Django Blog',
@@ -29,10 +28,10 @@ async function getCategories(): Promise<Category[]> {
       return [];
     }
     
-    const json: JSendResponse<Category[]> = await response.json();
-    
-    if (isJSendSuccess(json)) {
-      return json.data;
+    const json = await response.json();
+
+    if (json.status === 'success' && json.data?.categories) {
+      return json.data.categories;
     }
     
     console.error('Failed to fetch categories:', json);

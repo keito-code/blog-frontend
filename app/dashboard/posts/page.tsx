@@ -12,6 +12,7 @@ async function getMyPosts(): Promise<PostListItem[]> {
     .map(cookie => `${cookie.name}=${cookie.value}`)
     .join('; ');
 
+try {
   const response = await fetch(
     `${process.env.DJANGO_API_URL}${USER_ENDPOINTS.MY_POSTS}`,
     {
@@ -22,10 +23,23 @@ async function getMyPosts(): Promise<PostListItem[]> {
     }
   );
 
-  if (!response.ok) return [];
-  
-  const data = await response.json();
-  return data.data?.results || [];
+  if (!response.ok) {
+    console.error('Failed to fetch posts:', response.status);
+    return [];
+  }
+
+  const json = await response.json();
+
+  if (json.status === 'success' && json.data?.posts) {
+    return json.data.posts;  // PostListItem[]
+  }
+
+  console.error('Invalid JSend response:', json);
+    return [];
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return [];
+  }
 }
 
 // searchParamsを追加

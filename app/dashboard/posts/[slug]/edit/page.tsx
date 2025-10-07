@@ -37,22 +37,17 @@ async function getPostBySlug(slug: string): Promise<PostDetail | null> {
     });
     
     if (!response.ok) {
+      console.error('Failed to fetch post:', response.status);
       return null;
     }
     
-    const data = await response.json();
-    
-    // JSend形式と直接オブジェクト形式の両方に対応
-    if (data && typeof data === 'object') {
-      if ('status' in data && data.status === 'success' && 'data' in data) {
-        // JSend形式
-        return data.data;
-      } else if ('id' in data && 'slug' in data) {
-        // 直接PostDetailオブジェクト
-        return data as PostDetail;
-      }
+    const json = await response.json();
+
+    if (json.status === 'success' && json.data?.post) {
+      return json.data.post;
     }
     
+    console.error('Invalid JSend response:', json);
     return null;
   } catch (error) {
     console.error('Failed to fetch post:', error);
@@ -77,12 +72,13 @@ async function getCategories(): Promise<Category[]> {
       return [];
     }
     
-    const json: JSendResponse<Category[]> = await response.json();
-    
-    if (isJSendSuccess(json)) {
-      return json.data;
+    const json = await response.json();
+
+    if (json.status === 'success' && json.data?.categories) {
+      return json.data.categories;
     }
     
+    console.error('Invalid JSend response:', json);
     return [];
   } catch (error) {
     console.error('Error fetching categories:', error);

@@ -124,6 +124,17 @@ export interface PostUpdateData {
   post: PostDetail;  // 単数形（更新後の詳細を返す）
 }
 
+/**
+ * ユーザーの投稿一覧APIレスポンスのdata部分
+ * GET /v1/users/me/posts/
+ * 
+ * 注意: PostListDataと同じ構造だが、エンドポイントが異なるため分離
+ */
+export interface UserPostsData {
+  posts: PostListItem[];  // 複数形
+  pagination: PaginatedResponse;
+}
+
 // ============================================
 // エンドポイント定数
 // ============================================
