@@ -35,13 +35,12 @@ class ValidationError extends Error {
 
 /**
  * CSRFトークンを取得
- * Djangoがset_cookieで設定済みのものを優先的に使用
  */
 async function getCSRFToken(): Promise<string | null> {
   const cookieStore = await cookies();
   
   // 既にCSRFトークンがCookieに存在する場合はそれを使用
-  const existingToken = cookieStore.get('csrf_token')?.value;
+  const existingToken = cookieStore.get('csrftoken')?.value;
   if (existingToken) {
     return existingToken;
   }

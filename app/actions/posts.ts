@@ -44,11 +44,10 @@ class ValidationError extends Error {
 
 /**
  * CSRFトークンを取得
- * Djangoがログイン時にset_cookieで設定済みのものを使用
  */
 async function getCSRFToken(): Promise<string> {
   const cookieStore = await cookies();
-  const csrfToken = cookieStore.get('csrf_token')?.value;
+  const csrfToken = cookieStore.get('csrftoken')?.value;
   
   if (!csrfToken) {
     // CSRFトークンがない = 未ログイン or セッション切れ
