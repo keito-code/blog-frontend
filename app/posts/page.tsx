@@ -109,15 +109,45 @@ async function PostsList({ searchParams }: PageProps) {
       {/* 記事リスト */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
         {posts.map((post) => (
-          <article key={post.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">
+          <article 
+            key={post.id} 
+            className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 flex flex-col"
+          >
+            {/* カテゴリータグ（ホームページと統一） */}
+            {post.category && (
+              <Link
+                href={`/categories/${post.category.slug}`}
+                className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full mb-3 hover:bg-blue-200 w-fit"
+              >
+                {post.category.name}
+              </Link>
+            )}
+
+            {/* タイトル：2行固定 + 省略記号 */}
+            <h3 className="text-xl font-bold text-gray-800 mb-3 
+                           line-clamp-2 min-h-[3.5rem]">
               {post.title}
             </h3>
-            <div className="text-sm text-gray-600 space-y-1 mb-4">
-              <p>👤 {post.authorName}</p>
-              <p>📅 {new Date(post.createdAt).toLocaleDateString('ja-JP')}</p>
+
+            {/* メタ情報：高さ固定 */}
+            <div className="text-sm text-gray-600 mb-4 space-y-1">
+              <p className="flex items-center gap-1">
+                <span>👤</span>
+                <span>{post.authorName}</span>
+              </p>
+              <p className="flex items-center gap-1">
+                <span>📅</span>
+                <time dateTime={post.createdAt}>
+                  {new Date(post.createdAt).toLocaleDateString('ja-JP')}
+                </time>
+              </p>
             </div>
-            <Link href={`/posts/${post.slug}`} className="mt-auto w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors inline-block text-center">
+
+            {/* ボタン：下部に固定 */}
+            <Link 
+              href={`/posts/${post.slug}`} 
+              className="mt-auto w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors inline-block text-center"
+            >
               記事を読む →
             </Link>
           </article>

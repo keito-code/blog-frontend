@@ -103,6 +103,78 @@ export default async function Home() {
         </p>
       </div>
 
+      {/* 最新記事セクション */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold text-gray-700">
+            最新の記事
+          </h2>
+          {totalCount > 6 && (
+            <Link 
+              href="/posts"
+              className="text-blue-600 hover:text-blue-800 font-medium"
+            >
+              すべての記事 →
+            </Link>
+          )}
+        </div>
+
+        {/* 記事カード */}
+        {recentPosts.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {recentPosts.map((post: PostListItem) => (
+              <article 
+                key={post.id} 
+                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 flex flex-col"
+              >
+                {/* カテゴリータグ */}
+                {post.category && (
+                  <Link
+                    href={`/categories/${post.category.slug}`}
+                    className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full mb-3 hover:bg-blue-200 w-fit"
+                  >
+                    {post.category.name}
+                  </Link>
+                )}
+
+                {/* タイトル：2行固定 + 省略記号 */}
+                <h3 className="text-xl font-bold text-gray-800 mb-3 
+                               line-clamp-2 min-h-[3.5rem]">
+                  {post.title}
+                </h3>
+
+                {/* メタ情報：高さ固定 */}
+                <div className="text-sm text-gray-600 mb-4 space-y-1">
+                  <p className="flex items-center gap-1">
+                    <span>👤</span>
+                    <span>{post.authorName}</span>
+                  </p>
+                  <p className="flex items-center gap-1">
+                    <span>📅</span>
+                    <time dateTime={post.createdAt}>
+                      {new Date(post.createdAt).toLocaleDateString('ja-JP')}
+                    </time>
+                  </p>
+                </div>
+
+                {/* ボタン：下部に固定 */}
+                <Link 
+                  href={`/posts/${post.slug}`}
+                  className="mt-auto w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors inline-block text-center"
+                >
+                  記事を読む →
+                </Link>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-10 text-gray-500">
+            公開されている記事がまだありません
+          </div>
+        )}
+      </div>
+
+
       {/* カテゴリーセクション */}
       {topCategories.length > 0 && (
         <div className="mb-10">
@@ -132,81 +204,6 @@ export default async function Home() {
           </div>
         </div>
       )}
-
-      {/* 最新記事セクション */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-gray-700">
-            最新の記事
-          </h2>
-          {totalCount > 6 && (
-            <Link 
-              href="/posts"
-              className="text-blue-600 hover:text-blue-800 font-medium"
-            >
-              すべての記事を見る →
-            </Link>
-          )}
-        </div>
-
-        {/* 記事カード */}
-        {recentPosts.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {recentPosts.map((post: PostListItem) => (
-              <article 
-                key={post.id} 
-                className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6"
-              >
-                {/* カテゴリータグ */}
-                {post.category && (
-                  <Link
-                    href={`/categories/${post.category.slug}`}
-                    className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full mb-3 hover:bg-blue-200"
-                  >
-                    {post.category.name}
-                  </Link>
-                )}
-
-                <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">
-                  {post.title}
-                </h3>
-
-                <div className="text-sm text-gray-600 space-y-1 mb-4">
-                  <p>👤 {post.authorName}</p>
-                  <p>📅 {new Date(post.createdAt).toLocaleDateString('ja-JP')}</p>
-                </div>
-
-                <Link 
-                  href={`/posts/${post.slug}`}
-                  className="mt-auto w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors inline-block text-center"
-                >
-                  記事を読む →
-                </Link>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-10 text-gray-500">
-            公開されている記事がまだありません
-          </div>
-        )}
-      </div>
-
-      {/* ナビゲーションセクション */}
-      <div className="border-t pt-8 flex justify-center gap-4">
-        <Link
-          href="/posts"
-          className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          記事一覧
-        </Link>
-        <Link
-          href="/categories"
-          className="px-6 py-3 bg-white text-gray-800 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          カテゴリー一覧
-        </Link>
-      </div>
     </div>
   );
 }
