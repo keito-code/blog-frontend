@@ -24,7 +24,7 @@ async function searchPosts(query: string): Promise<SearchResult | { error: strin
       headers: {
         'Accept': 'application/json',
       },
-      cache: 'no-store',
+      next: { revalidate: 600 },
     });
 
     if (!response.ok) {

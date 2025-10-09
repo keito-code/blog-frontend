@@ -1,11 +1,11 @@
-import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/app/actions/auth';
 import { updatePost } from '@/app/actions/posts';
 import { PostDetail, POST_ENDPOINTS } from '@/types/post';
 import { Category, CATEGORY_ENDPOINTS } from '@/types/category';
-import { JSendResponse, isJSendSuccess } from '@/types/api';
 import { cookies } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 

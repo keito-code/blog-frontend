@@ -1,11 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AUTH_ENDPOINTS, LoginRequest, LoginResponse, CSRFTokenResponse } from '@/types/auth';
-import { JSendResponse, isJSendSuccess, isJSendFail, isJSendError } from '@/types/api';
+import { AUTH_ENDPOINTS, LoginRequest, CSRFTokenResponse } from '@/types/auth';
+import { JSendResponse, isJSendSuccess } from '@/types/api';
 
-// 環境変数から取得（クライアント側なのでNEXT_PUBLIC_プレフィックスが必要）
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 interface LoginFormProps {
@@ -13,16 +11,13 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // CSRFトークンを取得
   const getCSRFToken = async (): Promise<string | null> => {
     try {
-      // まず既存のCookieからCSRFトークンを探す
       const cookies = document.cookie.split(';');
       for (const cookie of cookies) {
         const [name, value] = cookie.trim().split('=');
@@ -31,10 +26,9 @@ export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
         }
       }
 
-      // Cookieにない場合はDjangoから取得
       const response = await fetch(`${apiUrl}${AUTH_ENDPOINTS.CSRF}`, {
         method: 'GET',
-        credentials: 'include', // Cookieを含める
+        credentials: 'include',
         headers: {
           'Accept': 'application/json',
         },
@@ -50,28 +44,26 @@ export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
         return data.data.csrfToken;
       }
       return null;
-    } catch (error) {
-      console.error('Error getting CSRF token:', error);
+    } catch (err) {
+      console.error('Error getting CSRF token:', err);
       return null;
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // CSRFトークンを取得
       const csrfToken = await getCSRFToken();
 
-      // ログインリクエストボディ（型定義を使用）
       const requestBody: LoginRequest = { email, password };
 
-      // Django APIに直接リクエスト
       const response = await fetch(`${apiUrl}${AUTH_ENDPOINTS.LOGIN}`, {
         method: 'POST',
-        credentials: 'include', // ブラウザが自動的にCookieを送信・保存
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -80,42 +72,36 @@ export function LoginForm({ redirectTo = '/dashboard' }: LoginFormProps) {
         body: JSON.stringify(requestBody),
       });
 
+      const data = await response.json();
 
-      const data: JSendResponse<LoginResponse> = await response.json();
+      if (response.ok && data.status === 'success') {
+        window.location.href = redirectTo;
 
-      if (response.ok && isJSendSuccess(data)) {
-        
-        // ブラウザがSet-Cookieヘッダーを自動的に処理
-        // access_tokenとrefresh_tokenが自動的に保存される
-        
-        // ページをリフレッシュしてServer Componentを再実行
-        router.push(redirectTo);
-        router.refresh();
-        
-      } else if (isJSendFail(data)) {
-        // バリデーションエラー
-        const errors = Object.entries(data.data)
-          .map(([field, messages]) => {
-            const msgArray = Array.isArray(messages) ? messages : [messages];
-            return `${field}: ${msgArray.join(', ')}`;
-          })
-          .join('; ');
-        setError(errors || 'ログイン情報が正しくありません');
+      } else if (data.status === 'fail') {
+        const errors = data.data
+          ? Object.entries(data.data)
+              .map(([field, messages]) => {
+                const msgArray = Array.isArray(messages)
+                  ? messages
+                  : [String(messages)];
+                return `${field}: ${msgArray.join(', ')}`;
+              })
+          .join('; ') : 'ログイン情報が正しくありません';
+        setError(errors);
         setPassword('');
-      } else if (isJSendError(data)) {
-        // サーバーエラー
+        setIsSubmitting(false);
+      } else if (data.status === 'error') {
         setError(data.message || 'ログインに失敗しました');
         setPassword('');
+        setIsSubmitting(false);
       } else {
-        // 予期しないレスポンス
         setError('ログインに失敗しました');
         setPassword('');
+        setIsSubmitting(false);
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      setError('ネットワークエラーが発生しました。しばらく経ってからお試しください。');
+    } catch {
+      setError('ネットワークエラーが発生しました。');
       setPassword('');
-    } finally {
       setIsSubmitting(false);
     }
   };

@@ -10,7 +10,7 @@ const ContentSecurityPolicy = `
   style-src 'self' 'unsafe-inline';
   img-src 'self' data:;
   font-src 'self' data:;
-  connect-src 'self' ${isDevelopment ? "ws: wss:" : ""};
+  connect-src 'self' http://localhost:8000 ${isDevelopment ? "ws: wss:" : ""};
   object-src 'none';
   frame-src 'none';
   base-uri 'self';
@@ -59,16 +59,111 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: false,
   },
 
-  // セキュリティヘッダー
+  // セキュリティヘッダー + キャッシュ戦略
   async headers() {
+    const activeSecurityHeaders = isProduction
+      ? securityHeaders
+      : securityHeaders.filter(
+          (header) => header.key !== 'Content-Security-Policy'
+        );
+
     return [
+      // 公開ページ: 積極的キャッシュ
+      {
+        source: '/',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, stale-while-revalidate=86400',
+          },
+          ...activeSecurityHeaders,
+        ],
+      },
+      {
+        source: '/posts',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, stale-while-revalidate=86400',
+          },
+          ...activeSecurityHeaders,
+        ],
+      },
+      {
+        source: '/posts/:slug',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, stale-while-revalidate=86400',
+          },
+          ...activeSecurityHeaders,
+        ],
+      },
+      {
+        source: '/categories',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, stale-while-revalidate=86400',
+          },
+          ...activeSecurityHeaders,
+        ],
+      },
+      {
+        source: '/categories/:slug',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, stale-while-revalidate=86400',
+          },
+          ...activeSecurityHeaders,
+        ],
+      },
+      {
+        source: '/search',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=600, stale-while-revalidate=3600',
+          },
+          ...activeSecurityHeaders,
+        ],
+      },
+      // 認証ページ: キャッシュなし
+      {
+        source: '/auth/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store',
+          },
+          ...activeSecurityHeaders,
+        ],
+      },
+      {
+        source: '/dashboard/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store',
+          },
+          ...activeSecurityHeaders,
+        ],
+      },
+      // 静的アセット: 長期キャッシュ
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // その他のページ: セキュリティヘッダーのみ
       {
         source: '/:path*',
-        headers: isProduction
-          ? securityHeaders
-          : securityHeaders.filter(
-              (header) => header.key !== 'Content-Security-Policy'
-            ),
+        headers: activeSecurityHeaders,
       },
     ];
   },

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import  { AUTH_ENDPOINTS } from '@/types/auth';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -13,7 +12,6 @@ export function LogoutButton({
   className?: string;
   children?: React.ReactNode;
 }) {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   // CSRFトークンをCookieから取得
@@ -50,29 +48,27 @@ export function LogoutButton({
           body: JSON.stringify({}), // 空のJSONボディを送信
         }
       );
-      
+
       // 401も成功として扱う（すでにログアウト済みの場合）
       if (response.ok || response.status === 401) {
-        router.push('/auth/login');
-        router.refresh();
+        window.location.href = '/';
       } else {
-        console.error('Logout API error, status:', response.status);
-        // エラーでも念のためログインページへ
-        router.push('/auth/login');
-        router.refresh();
+        // エラーでも念のためトップページへ
+        window.location.href = '/';
       }
-    } catch (error) {
-      console.error('Logout error:', error);
-      // ネットワークエラーでも念のためログインページへ
-      router.push('/auth/login');
-      router.refresh();
-    } finally {
-      setIsLoading(false);
+    } catch {
+      // ネットワークエラーでも念のためトップページへ
+      window.location.href = '/';
     }
   };
 
   return (
-    <button onClick={handleLogout} disabled={isLoading} className={className}>
+    <button
+     onClick={handleLogout}
+     disabled={isLoading}
+     className={className}
+     type="button"
+     >
       {isLoading ? 'ログアウト中...' : children}
     </button>
   );

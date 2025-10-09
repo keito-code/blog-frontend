@@ -129,8 +129,8 @@ async function apiFetchPublic<T = unknown>(
   let data: JSendResponse<T>;
   try {
     data = await response.json();
-  } catch (error) {
-    throw new Error('APIレスポンスの解析に失敗しました');
+  } catch {
+    throw new Error(`APIレスポンスの解析に失敗しました`);
   }
   
   // JSendフォーマット処理

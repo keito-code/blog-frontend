@@ -6,9 +6,20 @@ import type { PrivateUser } from '@/types/user'
 
 interface AuthNavClientProps {
   user: PrivateUser | null
+  loading?: boolean
 }
 
-export default function AuthNavClient({ user }: AuthNavClientProps) {
+export default function AuthNavClient({ user, loading = false }: AuthNavClientProps) {
+  // ローディング中のスケルトン表示
+  if (loading) {
+    return (
+      <div className="flex gap-3">
+        <div className="w-20 h-10 bg-gray-200 rounded-lg animate-pulse" />
+        <div className="w-24 h-10 bg-gray-200 rounded-lg animate-pulse" />
+      </div>
+    )
+  }
+  
   if (!user) {
     return (
       <div className="flex gap-3">

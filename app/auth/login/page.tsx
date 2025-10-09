@@ -4,6 +4,8 @@ import { getCurrentUser } from '@/app/actions/auth';
 import { LoginForm } from '@/components/auth/LoginForm';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'ログイン | Django Blog',
   description: 'ブログシステムにログイン',

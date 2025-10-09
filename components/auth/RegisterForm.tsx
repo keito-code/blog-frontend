@@ -1,27 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AUTH_ENDPOINTS, RegisterRequest, RegisterResponse, CSRFTokenResponse } from '@/types/auth';
-import { JSendResponse, isJSendSuccess, isJSendFail, isJSendError } from '@/types/api';
+import { AUTH_ENDPOINTS, RegisterRequest, CSRFTokenResponse } from '@/types/auth';
+import { JSendResponse, isJSendSuccess } from '@/types/api';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export function RegisterForm() {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     passwordConfirmation: '',
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // CSRFトークンを取得
   const getCSRFToken = async (): Promise<string | null> => {
     try {
-      // まず既存のCookieからCSRFトークンを探す
       const cookies = document.cookie.split(';');
       for (const cookie of cookies) {
         const [name, value] = cookie.trim().split('=');
@@ -30,7 +26,6 @@ export function RegisterForm() {
         }
       }
 
-      // Cookieにない場合はDjangoから取得
       const response = await fetch(`${apiUrl}${AUTH_ENDPOINTS.CSRF}`, {
         method: 'GET',
         credentials: 'include',
@@ -49,8 +44,8 @@ export function RegisterForm() {
         return data.data.csrfToken;
       }
       return null;
-    } catch (error) {
-      console.error('Error getting CSRF token:', error);
+    } catch (err) {
+      console.error('Error getting CSRF token:', err);
       return null;
     }
   };
@@ -64,8 +59,9 @@ export function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setIsSubmitting(true);
-    setError('');
+    setError(null);
 
     // パスワード確認
     if (formData.password !== formData.passwordConfirmation) {
@@ -75,11 +71,8 @@ export function RegisterForm() {
     }
 
     try {
-      
-      // CSRFトークンを取得
       const csrfToken = await getCSRFToken();
 
-      // 登録リクエストボディ（型定義を使用）
       const requestBody: RegisterRequest = {
         username: formData.username,
         email: formData.email,
@@ -87,10 +80,9 @@ export function RegisterForm() {
         passwordConfirmation: formData.passwordConfirmation,
       };
 
-      // Django APIに直接リクエスト
       const response = await fetch(`${apiUrl}${AUTH_ENDPOINTS.REGISTER}`, {
         method: 'POST',
-        credentials: 'include', // ブラウザが自動的にCookieを送信・保存
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -99,39 +91,38 @@ export function RegisterForm() {
         body: JSON.stringify(requestBody),
       });
 
+      const data = await response.json();
 
-      const data: JSendResponse<RegisterResponse> = await response.json();
+      if (response.ok && data.status === 'success') {
+        window.location.href = '/dashboard';
 
-      if (response.ok && isJSendSuccess(data)) {
-        router.push('/dashboard');
-        router.refresh();
-        
-      } else if (isJSendFail(data)) {
-        // バリデーションエラー
-        const errors = Object.entries(data.data)
-          .map(([field, messages]) => {
-            const msgArray = Array.isArray(messages) ? messages : [messages];
-            return `${field}: ${msgArray.join(', ')}`;
-          })
-          .join('\n');
-        setError(errors || '入力内容に誤りがあります');
-      } else if (isJSendError(data)) {
-        // サーバーエラー
+      } else if (data.status === 'fail') {
+        const errors = data.data
+          ? Object.entries(data.data)
+              .map(([field, messages]) => {
+                const msgArray = Array.isArray(messages)
+                  ? messages
+                  : [String(messages)];
+                return `${field}: ${msgArray.join(', ')}`;
+              })
+          .join('\n') : '入力内容に誤りがあります';
+        setError(errors);
+        setIsSubmitting(false);
+      } else if (data.status === 'error') {
         setError(data.message || '登録に失敗しました');
+        setIsSubmitting(false);
       } else {
-        // 予期しないレスポンス
         setError('登録に失敗しました');
+        setIsSubmitting(false);
       }
-    } catch (error) {
-      console.error('Register error:', error);
-      setError('ネットワークエラーが発生しました。しばらく経ってからお試しください。');
-    } finally {
+    } catch {
+      setError('ネットワークエラーが発生しました。');
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="mb-5">
         <label className="block mb-2 text-sm font-medium text-gray-700">
           ユーザー名
@@ -200,7 +191,7 @@ export function RegisterForm() {
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-700 p-3 rounded mb-5 text-sm">
+        <div className="bg-red-50 text-red-700 p-3 rounded mb-5 text-sm whitespace-pre-line">
           ⚠️ {error}
         </div>
       )}

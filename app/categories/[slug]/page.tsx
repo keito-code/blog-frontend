@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CategoryDetailData, CategoryPostsData, CATEGORY_ENDPOINTS } from '@/types/category';
-import { PostListItem } from '@/types/post';  
 import { JSendResponse } from '@/types/api';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';

@@ -6,6 +6,8 @@ import { USER_ENDPOINTS } from '@/types/user';
 import { PostActions } from '@/components/posts/PostActions';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 async function getMyPosts(): Promise<PostListItem[]> {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.getAll()

@@ -4,6 +4,8 @@ import { getCurrentUser } from '@/app/actions/auth';
 import { createPost } from '@/app/actions/posts';
 import { CATEGORY_ENDPOINTS, Category } from '@/types/category';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: '新規投稿 | Django Blog',
   description: '新しい記事を作成',
