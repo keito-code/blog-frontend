@@ -1,16 +1,17 @@
 import type { NextConfig } from 'next';
 
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
-// CSPディレクティブ（実装済み機能のみ）
+// CSP
 const ContentSecurityPolicy = `
   default-src 'self';
   script-src 'self' 'unsafe-inline' ${isDevelopment ? "'unsafe-eval'" : ""};
   style-src 'self' 'unsafe-inline';
-  img-src 'self' data:;
-  font-src 'self' data:;
-  connect-src 'self' http://localhost:8000 ${isDevelopment ? "ws: wss:" : ""};
+  img-src 'self';
+  font-src 'self';
+  connect-src 'self' ${apiUrl} ${isDevelopment ? "ws: wss:" : ""};
   object-src 'none';
   frame-src 'none';
   base-uri 'self';
@@ -61,11 +62,9 @@ const nextConfig: NextConfig = {
 
   // セキュリティヘッダー + キャッシュ戦略
   async headers() {
-    const activeSecurityHeaders = isProduction
-      ? securityHeaders
-      : securityHeaders.filter(
-          (header) => header.key !== 'Content-Security-Policy'
-        );
+    const activeSecurityHeaders = isDevelopment
+    ? securityHeaders.filter((h) => h.key !== 'Content-Security-Policy')
+    : securityHeaders;
 
     return [
       // 公開ページ: 積極的キャッシュ
