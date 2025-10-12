@@ -71,60 +71,36 @@ const nextConfig: NextConfig = {
       {
         source: '/',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, stale-while-revalidate=86400',
-          },
           ...activeSecurityHeaders,
         ],
       },
       {
         source: '/posts',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, stale-while-revalidate=86400',
-          },
           ...activeSecurityHeaders,
         ],
       },
       {
         source: '/posts/:slug',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, stale-while-revalidate=86400',
-          },
           ...activeSecurityHeaders,
         ],
       },
       {
         source: '/categories',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, stale-while-revalidate=86400',
-          },
           ...activeSecurityHeaders,
         ],
       },
       {
         source: '/categories/:slug',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=3600, stale-while-revalidate=86400',
-          },
           ...activeSecurityHeaders,
         ],
       },
       {
         source: '/search',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=600, stale-while-revalidate=3600',
-          },
           ...activeSecurityHeaders,
         ],
       },
@@ -132,20 +108,12 @@ const nextConfig: NextConfig = {
       {
         source: '/auth/:path*',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'private, no-store',
-          },
           ...activeSecurityHeaders,
         ],
       },
       {
         source: '/dashboard/:path*',
         headers: [
-          {
-            key: 'Cache-Control',
-            value: 'private, no-store',
-          },
           ...activeSecurityHeaders,
         ],
       },
