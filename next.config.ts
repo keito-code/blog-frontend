@@ -50,6 +50,9 @@ const nextConfig: NextConfig = {
   // React Strict Mode
   reactStrictMode: true,
 
+  // URLの末尾にスラッシュを付ける設定(Django側に合わせる)
+  trailingSlash: true,
+
   // TypeScriptエラーでビルドを失敗させる
   typescript: {
     ignoreBuildErrors: false,
@@ -167,5 +170,4 @@ const nextConfig: NextConfig = {
   // Vercelデプロイ用
   output: 'standalone',
 };
-
 export default nextConfig;

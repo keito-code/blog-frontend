@@ -26,9 +26,7 @@ async function getPosts(params: SearchParams): Promise<PostListData | null> {
       `${apiUrl}${POST_ENDPOINTS.LIST}?${queryParams}`,
       {
         next: { revalidate: 3600 },
-        headers: {
-          'Accept': 'application/json',
-        }
+        headers: {'Accept': 'application/json'},
       }
     );
     
@@ -71,13 +69,12 @@ function PostsLoading() {
 }
 
 // 記事リストコンポーネント
-async function PostsList({ searchParams }: PageProps) {
-  const resolvedParams = await searchParams;
-  const data = await getPosts(resolvedParams);
+async function PostsList({ searchParams }: { searchParams: SearchParams }) {
+  const data = await getPosts(searchParams);
   const posts = data?.posts ?? [];
   const pagination = data?.pagination;
-  const currentPage = Number(resolvedParams.page) || 1;
-  const pageSize = Number(resolvedParams.pageSize) || 10;
+  const currentPage = Number(searchParams.page) || 1;
+  const pageSize = Number(searchParams.pageSize) || 10;
   const totalPages = pagination?.totalPages ?? 0;
   const totalCount = pagination?.count ?? 0;
   
@@ -185,7 +182,9 @@ async function PostsList({ searchParams }: PageProps) {
 }
 
 // メインページコンポーネント
-export default async function PostsPage({ searchParams }: PageProps) {  
+export default async function PostsPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
@@ -217,7 +216,7 @@ export default async function PostsPage({ searchParams }: PageProps) {
         
         {/* 記事一覧（Suspense対応） */}
         <Suspense fallback={<PostsLoading />}>
-          <PostsList searchParams={searchParams} />
+          <PostsList searchParams={resolvedSearchParams} />
         </Suspense>
       </main>
     </div>
