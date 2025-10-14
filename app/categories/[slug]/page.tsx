@@ -1,19 +1,34 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { CategoryDetailData, CategoryPostsData, CATEGORY_ENDPOINTS } from '@/types/category';
+import { CategoryDetailData, CategoryPostsData, CATEGORY_ENDPOINTS, Category } from '@/types/category';
 import { JSendResponse } from '@/types/api';
 
+export const revalidate = 3600;
+export const dynamicParams = true;
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+// カテゴリslugを自動生成
+// 動的レンダリングの処理を速くするため実装する
+export async function generateStaticParams() {
+  const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.LIST}`, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  const json = await response.json();
+
+  if (json.status !== 'success' || !json.data?.categories) return [];
+
+  // { slug: 'example' } の形で返す
+  return json.data.categories.map((c: Category) => ({ slug: c.slug }));
+}
 
 async function getCategory(slug: string) {
   try {
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.DETAIL(slug)}`,
       {
-        next: { revalidate: 3600 },
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Accept': 'application/json'},
       }
     );
 
@@ -52,10 +67,7 @@ async function getCategoryPosts(
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.POSTS(slug)}?${params}`,
       {
-        next: { revalidate: 3600 },
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Accept': 'application/json'},
       }
     );
 
