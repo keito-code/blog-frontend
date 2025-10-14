@@ -3,6 +3,9 @@ import { Search, FileText, Calendar, User, AlertCircle, ArrowLeft } from 'lucide
 import { sanitizeSearchQuery } from '@/utils/sanitize';
 import { PostListItem, POST_ENDPOINTS } from '@/types/post';
 
+// ページは動的レンダリングされるが、同じ検索クエリに対するデータは10分間キャッシュされる
+export const revalidate = 600;
+
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 interface SearchResult {
@@ -21,10 +24,7 @@ async function searchPosts(query: string): Promise<SearchResult | { error: strin
 
   try {
     const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-      },
-      next: { revalidate: 600 },
+      headers: {'Accept': 'application/json'},
     });
 
     if (!response.ok) {
@@ -69,7 +69,6 @@ async function searchPosts(query: string): Promise<SearchResult | { error: strin
     return { error: '検索中に予期しないエラーが発生しました' };
   }
 }
-    
 
 interface SearchPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
