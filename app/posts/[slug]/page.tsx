@@ -3,18 +3,15 @@ import { notFound } from 'next/navigation';
 import { PostDetail, POST_ENDPOINTS, PostListItem } from '@/types/post';
 import ServerMarkdownRenderer from '@/components/ServerMarkdownRenderer';
 
-// ページが動的になるのを防ぐため
-export const dynamic = 'force-static';
+export const revalidate = 3600;
+// 新規記事も動的に生成
+export const dynamicParams = true;
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 // 全ての記事スラッグを取得して静的生成する
 export async function generateStaticParams() {
-  const response = await fetch(`${apiUrl}${POST_ENDPOINTS.LIST}`, {
-    // ビルド時に一度だけ呼ばれるのでキャッシュしてもいい
-    next: { revalidate: 3600 },
-  });
-
+  const response = await fetch(`${apiUrl}${POST_ENDPOINTS.LIST}`);
   const json = await response.json();
 
   if (json.status !== 'success' || !json.data?.posts) return [];
@@ -25,29 +22,15 @@ export async function generateStaticParams() {
     .map((p: PostListItem) => ({ slug: p.slug }));
 }
 
-// データ取得関数
+// 単一記事を取得
 async function getPost(slug: string): Promise<PostDetail | null> {
   try {
-    const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`, {
-        next: { revalidate: 3600 },
-        headers: { 'Accept': 'application/json' },
-      });
-
-    if (!response.ok) {
-      console.error('Response not ok:', response.status);
-      return null;
-    }
+    const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`);
+    if (!response.ok) return null;
 
     const json = await response.json();
-
-    if (json.status === 'success' && json.data?.post) {
-      return json.data.post;
-    }
-
-    console.error('API error:', json);
-    return null;
-  } catch (error) {
-    console.error('Error fetching post:', error);
+    return json.status === 'success' ? json.data?.post ?? null : null;
+  } catch {
     return null;
   }
 }
@@ -61,13 +44,8 @@ export default async function PostDetailPage({ params }: Props) {
   const resolvedParams = await params;
   const post = await getPost(resolvedParams.slug);
 
-  if (!post) {
-    console.error('Post is null, returning 404');
-    notFound();
-  }
-  
   if (!post || post.status !=='published') {
-    notFound(); // 404ページへ
+    notFound(); 
   }
 
   return (
