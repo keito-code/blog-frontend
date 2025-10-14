@@ -1,23 +1,38 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { PostDetail, POST_ENDPOINTS } from '@/types/post';
+import { PostDetail, POST_ENDPOINTS, PostListItem } from '@/types/post';
 import ServerMarkdownRenderer from '@/components/ServerMarkdownRenderer';
+
+// ページが動的になるのを防ぐため
+export const dynamic = 'force-static';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
+// 全ての記事スラッグを取得して静的生成する
+export async function generateStaticParams() {
+  const response = await fetch(`${apiUrl}${POST_ENDPOINTS.LIST}`, {
+    // ビルド時に一度だけ呼ばれるのでキャッシュしてもいい
+    next: { revalidate: 3600 },
+  });
+
+  const json = await response.json();
+
+  if (json.status !== 'success' || !json.data?.posts) return [];
+
+  // { slug: 'example' } の形で返す
+  return json.data.posts
+    .filter((p: PostListItem) => p.status === 'published')
+    .map((p: PostListItem) => ({ slug: p.slug }));
+}
+
 // データ取得関数
 async function getPost(slug: string): Promise<PostDetail | null> {
-
   try {
     const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`, {
         next: { revalidate: 3600 },
-        headers: {
-          'Accept': 'application/json',
-        }
-      }
-    );
+        headers: { 'Accept': 'application/json' },
+      });
 
-    
     if (!response.ok) {
       console.error('Response not ok:', response.status);
       return null;
@@ -37,14 +52,13 @@ async function getPost(slug: string): Promise<PostDetail | null> {
   }
 }
 
-// サーバーコンポーネント
+// paramsはPromiseでラップする
 type Props = {
   params: Promise<{ slug: string }>;
 };
 
 export default async function PostDetailPage({ params }: Props) {
-  const resolvedParams = await params; 
-
+  const resolvedParams = await params;
   const post = await getPost(resolvedParams.slug);
 
   if (!post) {
