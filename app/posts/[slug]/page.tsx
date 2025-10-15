@@ -11,7 +11,9 @@ const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 // 全ての記事スラッグを取得して静的生成する
 export async function generateStaticParams() {
-  const response = await fetch(`${apiUrl}${POST_ENDPOINTS.LIST}`);
+  const response = await fetch(`${apiUrl}${POST_ENDPOINTS.LIST}`, {
+    headers: { 'Accept': 'application/json' },
+  });
   const json = await response.json();
 
   if (json.status !== 'success' || !json.data?.posts) return [];
@@ -25,7 +27,9 @@ export async function generateStaticParams() {
 // 単一記事を取得
 async function getPost(slug: string): Promise<PostDetail | null> {
   try {
-    const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`);
+    const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`, {
+      headers: { 'Accept': 'application/json' },
+    });
     if (!response.ok) return null;
 
     const json = await response.json();
