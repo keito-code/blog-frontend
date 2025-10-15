@@ -6,10 +6,9 @@ import { JSendResponse } from '@/types/api';
 export const revalidate = 3600;
 export const dynamicParams = true;
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000/api';
 
 // カテゴリslugを自動生成
-// 動的レンダリングの処理を速くするため実装する
 export async function generateStaticParams() {
   const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.LIST}`, {
     headers: { 'Accept': 'application/json' },

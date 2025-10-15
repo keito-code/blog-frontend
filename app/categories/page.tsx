@@ -2,18 +2,15 @@ import Link from 'next/link';
 import { CategoryListData, CATEGORY_ENDPOINTS } from '@/types/category';
 import { JSendResponse } from '@/types/api';
 
-const apiUrl= process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+export const revalidate = 3600; // Full Route CacheとData Cache有効
+
+const apiUrl= process.env.DJANGO_API_URL || 'http://localhost:8000/api';
 
 async function getCategories() {
   try {
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`,
-      {
-        next: { revalidate: 3600 },
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      {headers: {'Accept': 'application/json'}}
     );
 
     if (!response.ok) {
@@ -26,7 +23,6 @@ async function getCategories() {
     if (json.status === 'success' && json.data?.categories) {
       return json.data.categories;
     }
-    
     
     console.error('API returned error:', json);
     return null;
