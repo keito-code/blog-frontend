@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 
 export const metadata: Metadata = {
-  title: '新規登録 | Django Blog',
+  title: '新規登録',
   description: 'ブログシステムに新規登録',
 };
 

@@ -7,7 +7,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'ログイン | Django Blog',
+  title: 'ログイン',
   description: 'ブログシステムにログイン',
 };
 

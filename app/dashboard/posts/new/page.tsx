@@ -9,7 +9,7 @@ import { CATEGORY_ENDPOINTS, Category } from '@/types/category';
 // これにより、getCategoriesのData Cacheを有効にできる。
 
 export const metadata: Metadata = {
-  title: '新規投稿 | Django Blog',
+  title: '新規投稿',
   description: '新しい記事を作成',
 };
 

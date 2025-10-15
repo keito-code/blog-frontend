@@ -20,7 +20,7 @@ interface EditPostPageProps {
 export async function generateMetadata({ params }: EditPostPageProps) {
   const resolvedParams = await params;
   return {
-    title: `記事編集 | My Blog`,
+    title: `記事編集`,
     description: `記事を編集: ${resolvedParams.slug}`,
   };
 }
