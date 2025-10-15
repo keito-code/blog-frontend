@@ -47,6 +47,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+
+  // ビルドタイムアウトエラーを防ぐため、静的ページ生成の制限時間を延長
+  staticPageGenerationTimeout: 120,
+  
   // React Strict Mode
   reactStrictMode: true,
 
@@ -166,8 +170,5 @@ const nextConfig: NextConfig = {
     
     return config;
   },
-
-  // Vercelデプロイ用
-  output: 'standalone',
 };
 export default nextConfig;
