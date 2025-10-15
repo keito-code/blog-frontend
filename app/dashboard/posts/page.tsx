@@ -6,7 +6,9 @@ import { USER_ENDPOINTS } from '@/types/user';
 import { PostActions } from '@/components/posts/PostActions';
 import { cookies } from 'next/headers';
 
-export const dynamic = 'force-dynamic';
+// export const dynamic = 'force-dynamic';は削除した。
+// 理由は、cookie()やsearchParamsにより動的レンダリングであるから。
+// Data Cahcheはdefaultでno-sotreだから。
 
 async function getMyPosts(): Promise<PostListItem[]> {
   const cookieStore = await cookies();
@@ -18,6 +20,8 @@ try {
   const response = await fetch(
     `${process.env.DJANGO_API_URL}${USER_ENDPOINTS.MY_POSTS}`,
     {
+      // 動的レンダリングでdefaultだが明示性のため
+      cache: 'no-store',
       headers: {
         'Cookie': cookieHeader,
         'Accept': 'application/json',

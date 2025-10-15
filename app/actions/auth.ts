@@ -15,10 +15,9 @@ import {
   ActionResult,
 } from '@/types/api';
 
-// 環境変数から取得
 const DJANGO_API_URL = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
-// カスタムエラークラス（posts.tsと共通化する場合は別ファイルへ）
+// カスタムエラークラス
 class AuthenticationError extends Error {
   constructor(message = '認証が必要です') {
     super(message);

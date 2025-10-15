@@ -2,7 +2,10 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/app/actions/auth';
 
-export const dynamic = 'force-dynamic';
+// export const dynamic = 'force-dynamic';は削除する。
+// 理由は、getCurrentUser()内でcookie()を使用しているので動的レンダリングになる。
+// 動的レンダリングのコンテキストでは、Data CacheはCookieごとに分離されるため、
+// ユーザー情報が他のユーザーに共有されることはなi
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
