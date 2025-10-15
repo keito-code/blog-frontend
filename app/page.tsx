@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { POST_ENDPOINTS, PostListItem, PostListData } from '@/types/post';
 import { CATEGORY_ENDPOINTS, CategoryListData } from '@/types/category';
 
+export const revalidate = 3600;
+
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 // データ取得関数（最新6件のみ）
@@ -16,10 +18,7 @@ async function getRecentPosts(): Promise<PostListData | null> {
     const response = await fetch(
       `${apiUrl}${POST_ENDPOINTS.LIST}?${params}`,
       {
-        next: { revalidate: 3600 },
-        headers:{
-          'Accept': 'application/json',
-        }
+        headers:{'Accept': 'application/json'}
       }
     );
     
@@ -46,12 +45,9 @@ async function getRecentPosts(): Promise<PostListData | null> {
 async function getCategories(): Promise<CategoryListData | null> {
   try {
     const response = await fetch(
-      `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`,
+      `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`, 
       {
-        next: { revalidate: 3600 },
-        headers: {
-          'Accept': 'application/json',
-        },
+        headers: {'Accept': 'application/json'}
       }
     );
 
@@ -96,7 +92,7 @@ export default async function Home() {
       {/* タイトルセクション */}
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold text-gray-800 mb-2">
-          MyBlog
+          PostLog
         </h1>
         <p className="text-gray-600">
           技術メモと日々の記録
