@@ -41,7 +41,6 @@ export default function AuthNavClient({ user, loading = false }: AuthNavClientPr
 
   return (
     <div className="flex items-center gap-4">
-      <span className="text-sm text-gray-600">👤 {user.username}</span>
       <Link 
         href="/dashboard" 
         className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
