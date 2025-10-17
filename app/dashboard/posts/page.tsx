@@ -6,9 +6,7 @@ import { USER_ENDPOINTS } from '@/types/user';
 import { PostActions } from '@/components/posts/PostActions';
 import { cookies } from 'next/headers';
 
-// export const dynamic = 'force-dynamic';は削除した。
-// 理由は、cookie()やsearchParamsにより動的レンダリングであるから。
-// Data Cahcheはdefaultでno-sotreだから。
+export const dynamic = 'force-dynamic';
 
 async function getMyPosts(): Promise<PostListItem[]> {
   const cookieStore = await cookies();

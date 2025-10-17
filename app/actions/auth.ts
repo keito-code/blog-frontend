@@ -184,8 +184,7 @@ export async function getCurrentUser(): Promise<PrivateUser | null> {
       USER_ENDPOINTS.ME,
       {
         method: 'GET',
-    
-        next: { revalidate: 60 }
+        cache: 'no-store',
       }
     );
     

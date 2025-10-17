@@ -4,9 +4,7 @@ import { getCurrentUser } from '@/app/actions/auth';
 import { createPost } from '@/app/actions/posts';
 import { CATEGORY_ENDPOINTS, Category } from '@/types/category';
 
-// export const dynamic = 'force-dynamic';を削除。
-// 理由: getCurrentUser()が内部でcookies()を呼び出すため、このページは自動的に動的レンダリングになる。
-// これにより、getCategoriesのData Cacheを有効にできる。
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: '新規投稿',

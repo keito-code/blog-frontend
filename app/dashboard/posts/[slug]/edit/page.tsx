@@ -5,11 +5,7 @@ import { PostDetail, POST_ENDPOINTS } from '@/types/post';
 import { Category, CATEGORY_ENDPOINTS } from '@/types/category';
 import { cookies } from 'next/headers';
 
-// export const dynamic = 'force-dynamic';は削除した。
-// 理由は、Full Route CacheとData Cacheを無効化するからである。
-// 目的は、パフォーマンス向上のために、カテゴリのData Cacheをするためである。
-// キャッシュ挙動は、cookie()があるのでFull Route Cacheは無効で、カテゴリのData Cacheは有効
-// 記事のData Cacheはすぐ反映させるため無効である。
+export const dynamic = 'force-dynamic';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
