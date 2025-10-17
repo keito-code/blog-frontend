@@ -15,13 +15,23 @@ interface LoginPageProps {
   searchParams: Promise<{ from?: string }>;
 }
 
+function getSafeRedirectUrl(from:string | undefined): string {
+  if (!from) {
+    return '/dashboard';
+  }
+
+  if (!from.startsWith('/') || from.startsWith('//')) {
+    console.warn(`[Security] Invalid redirect URL rejected: ${from}`);
+    return '/dashboard';
+  }
+  return from;
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  // searchParamsを await で取得（Next.js 15）
   const params = await searchParams;
-  const from = params.from || '/dashboard';
+  const from = getSafeRedirectUrl(params.from); // 検証済みURLS
 
   const user = await getCurrentUser();
-
   if (user) {
     redirect(from);
   }
