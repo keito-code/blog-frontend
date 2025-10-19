@@ -19,7 +19,7 @@ async function getCategories(): Promise<Category[]> {
       `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`,
       {
         // Data Cacheは適用する
-        next: { revalidate: 3600 },
+        next: { revalidate: 86400 },
         headers: {'Accept': 'application/json'},
       }
     );

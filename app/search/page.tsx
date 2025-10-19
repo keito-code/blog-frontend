@@ -3,8 +3,8 @@ import { Search, FileText, Calendar, User, AlertCircle, ArrowLeft } from 'lucide
 import { sanitizeSearchQuery } from '@/utils/sanitize';
 import { PostListItem, POST_ENDPOINTS } from '@/types/post';
 
-// 同じ検索クエリに対するデータは10分間キャッシュされる
-export const revalidate = 600;
+// export const revalidate = 600;は機能しない。動的レンダリングだから
+// Data Cacheするならfetchで設定する必要がある。
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
@@ -24,6 +24,7 @@ async function searchPosts(query: string): Promise<SearchResult | { error: strin
 
   try {
     const response = await fetch(url, {
+      next: { revalidate: 600 },
       headers: {'Accept': 'application/json'},
     });
 

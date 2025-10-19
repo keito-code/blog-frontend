@@ -25,7 +25,7 @@ async function getPosts(params: SearchParams): Promise<PostListData | null> {
     const response = await fetch(
       `${apiUrl}${POST_ENDPOINTS.LIST}?${queryParams}`,
       {
-        next: { revalidate: 3600, tags:['posts'] },
+        next: { revalidate: 86400, tags:['posts'] },
         headers: {'Accept': 'application/json'},
       }
     );

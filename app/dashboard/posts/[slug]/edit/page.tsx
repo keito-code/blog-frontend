@@ -60,7 +60,7 @@ async function getCategories(): Promise<Category[]> {
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`,
       {
-        next: { revalidate: 3600 },
+        next: { revalidate: 86400 },
         headers: { 'Accept': 'application/json'},
       }
     );

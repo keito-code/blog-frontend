@@ -10,7 +10,7 @@ import { JSendResponse } from '@/types/api';
 
 export const dynamicParams = true;
 
-const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000/api';
+const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 // 初回表示のパフォーマンス最適化のため
 export async function generateStaticParams() {
