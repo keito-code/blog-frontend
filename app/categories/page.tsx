@@ -10,7 +10,10 @@ async function getCategories() {
   try {
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`,
-      {headers: {'Accept': 'application/json'}}
+      {
+        next: { tags: ['categories'] },
+        headers: {'Accept': 'application/json'}
+      }
     );
 
     if (!response.ok) {

@@ -18,6 +18,7 @@ async function getRecentPosts(): Promise<PostListData | null> {
     const response = await fetch(
       `${apiUrl}${POST_ENDPOINTS.LIST}?${params}`,
       {
+        next: {tags: ['posts'] },
         headers:{'Accept': 'application/json'}
       }
     );
@@ -47,7 +48,8 @@ async function getCategories(): Promise<CategoryListData | null> {
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`, 
       {
-        headers: {'Accept': 'application/json'}
+        next: { tags: ['categories'] },
+        headers: {'Accept': 'application/json'},
       }
     );
 

@@ -3,12 +3,16 @@ import { notFound } from 'next/navigation';
 import { CategoryDetailData, CategoryPostsData, CATEGORY_ENDPOINTS, Category } from '@/types/category';
 import { JSendResponse } from '@/types/api';
 
-export const revalidate = 3600;
+// export const revalidate = 3600;は削除。
+// 理由は、動的レンダリング(searchParams)が、ルートセグメント(export const revalidate)を上書きするから。
+// 結果、Data Cacheしたいなら各fetch単位でする必要がある。
+// 動的レンダリング内でのルートセグメントでData Cache設定は無意味。
+
 export const dynamicParams = true;
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000/api';
 
-// カテゴリslugを自動生成
+// 初回表示のパフォーマンス最適化のため
 export async function generateStaticParams() {
   const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.LIST}`, {
     headers: { 'Accept': 'application/json' },
@@ -27,6 +31,7 @@ async function getCategory(slug: string) {
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.DETAIL(slug)}`,
       {
+        next: { revalidate: 3600, tags: [`category-${slug}`] },
         headers: {'Accept': 'application/json'},
       }
     );
@@ -56,7 +61,8 @@ async function getCategoryPosts(
   slug: string,
   page: number = 1,
   pageSize: number = 10
-) {  
+) { 
+
   try {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -66,6 +72,7 @@ async function getCategoryPosts(
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.POSTS(slug)}?${params}`,
       {
+        next: { revalidate: 3600, tags: ['posts', `category-${slug}`] },
         headers: {'Accept': 'application/json'},
       }
     );

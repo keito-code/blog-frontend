@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { revalidatePath } from 'next/cache';
+import { revalidateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { 
   POST_ENDPOINTS, 
@@ -91,7 +91,6 @@ async function apiFetch<T = unknown>(
     ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
   };
   
-  
   const response = await fetch(`${DJANGO_API_URL}${endpoint}`, {
     ...options,
     method,
@@ -160,7 +159,6 @@ async function apiFetch<T = unknown>(
   return data as unknown as T;
 }
 
-// Server Action: 記事を作成
 export async function createPost(formData: FormData): Promise<void> {
   const action = formData.get('action');
   if (action === 'cancel') {
@@ -215,20 +213,14 @@ export async function createPost(formData: FormData): Promise<void> {
     throw new Error('記事の作成に失敗しました');
   }
 
-  // 成功時の処理（try-catchの外）
-  revalidatePath('/dashboard/posts');
-  revalidatePath('/categories');
-  
-  // 公開記事の場合のみ公開ページを更新
   if (status === 'published') {
-    revalidatePath('/');
-    revalidatePath('/posts');
+    revalidateTag('posts');
+    revalidateTag('categories');
   }
+
   redirect('/dashboard/posts');
 }
 
-
-// Server Action: 記事を更新
 export async function updatePost(slug: string, formData: FormData): Promise<void> {
   const action = formData.get('action');
   if (action === 'cancel') {
@@ -284,31 +276,24 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
     );
   }
 
-  // 成功時の処理
-  revalidatePath('/dashboard/posts');
-  revalidatePath(`/posts/${slug}`);
-  revalidatePath('/categories');
+  revalidateTag(`post-${slug}`);
+  revalidateTag('posts');  
+  revalidateTag('categories'); 
+  revalidateTag(`category-${slug}`);
 
-  // 公開記事の場合のみ、ホームと一覧を更新
-  if (status === 'published') {
-    revalidatePath('/');
-    revalidatePath('/posts');
-  }
   redirect('/dashboard/posts');
 }
 
-// Server Action: 記事を削除
 export async function deletePost(slug: string): Promise<ActionResult<undefined>> {
   try {
     await apiFetch(POST_ENDPOINTS.DELETE(slug), {
       method: 'DELETE',
     });
 
-    // 成功時：キャッシュを更新
-    revalidatePath('/dashboard/posts');
-    revalidatePath('/');
-    revalidatePath('/posts');
-    revalidatePath(`/posts/${slug}`);
+    revalidateTag(`post-${slug}`);
+    revalidateTag('posts'); 
+    revalidateTag('categories'); 
+    revalidateTag(`category-${slug}`);
     
     return {
       status: 'success',
@@ -342,7 +327,6 @@ export async function deletePost(slug: string): Promise<ActionResult<undefined>>
   }
 }
 
-// Server Action: 記事のステータスを変更（公開/下書き）
 export async function updatePostStatus(
   slug: string, 
   status: 'published' | 'draft'
@@ -353,11 +337,10 @@ export async function updatePostStatus(
       body: JSON.stringify({ status }),
     });
 
-    // 成功時：キャッシュを更新
-    revalidatePath('/dashboard/posts');
-    revalidatePath('/');
-    revalidatePath(`/posts/${slug}`);
-    revalidatePath('/posts');
+    revalidateTag(`post-${slug}`);
+    revalidateTag('posts');
+    revalidateTag('categories'); 
+    revalidateTag(`category-${slug}`);
     
     return {
       status: 'success',

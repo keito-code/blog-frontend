@@ -27,7 +27,9 @@ export async function generateStaticParams() {
 // 単一記事を取得
 async function getPost(slug: string): Promise<PostDetail | null> {
   try {
-    const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`, {
+    const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`, 
+    {
+      next: { revalidate: 3600, tags:[`post-${slug}`]},
       headers: { 'Accept': 'application/json' },
     });
     if (!response.ok) return null;
