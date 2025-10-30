@@ -4,8 +4,8 @@ Django Blog APIのフロントエンドアプリケーション
 
 ## 🚀 デモサイト
 
-**Live Demo**: https://blog-frontend-ten-xi.vercel.app  
-**Backend API**: https://django-blog-ox35.onrender.com
+**Live Demo**: https://post-log.com (https://www.post-log.com)  
+**Backend API**: https://api.post-log.com
 
 ## 📋 技術スタック
 
@@ -21,6 +21,8 @@ Django Blog APIのフロントエンドアプリケーション
 - 検索機能
 - 公開/非公開管理
 - Markdownレンダリング
+- カテゴリー機能
+- ページネーション
 
 ## 🔧 セットアップ
 
@@ -36,21 +38,13 @@ npm run dev
 ```
 
 ## 環境変数
+
+### 開発環境
 ```
 # .env.local
-NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_API_URL=http://localhost:8000
 DJANGO_API_URL=http://localhost:8000
 ```
-
-## 📝 今後の拡張・改善予定
-
-- [ ] ページネーション
-- [ ] Markdownプレビュー機能
-- [ ] コメント機能
-- [ ] タグ・カテゴリー機能
-- [ ] 認証機能のServer Actions化(Route Handler → Server Actions移行)
-- [ ] URLメッセージのモダン化(日本語 → メッセージコード化)
-- [ ] DAL層の実装
 
 
 ## 👤 作者
