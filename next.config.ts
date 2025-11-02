@@ -6,17 +6,14 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // CSP
 const ContentSecurityPolicy = `
-  default-src 'self';
+  default-src 'none';
   script-src 'self' 'unsafe-inline' ${isDevelopment ? "'unsafe-eval'" : ""};
-  style-src 'self' 'unsafe-inline';
+  style-src 'self';
   img-src 'self';
   font-src 'self';
   connect-src 'self' ${apiUrl} ${isDevelopment ? "ws: wss:" : ""};
-  object-src 'none';
-  frame-src 'none';
   base-uri 'self';
   form-action 'self';
-  frame-ancestors 'none';
 `.replace(/\s{2,}/g, ' ').trim();
 
 const securityHeaders = [
