@@ -4,7 +4,7 @@ Django Blog APIのフロントエンドアプリケーション
 
 ## 🚀 デモサイト
 
-**Live Demo**: https://post-log.com (https://www.post-log.com)  
+**Live Demo**: https://post-log.com
 **Backend API**: https://api.post-log.com
 
 ## 📋 技術スタック
