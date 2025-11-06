@@ -196,6 +196,14 @@ export async function createPost(formData: FormData): Promise<void> {
       method: 'POST',
       body: JSON.stringify(requestBody),
     });
+
+    if (status === 'published') {
+      console.log('Revalidating posts and categories...');
+      revalidateTag('posts');
+      revalidateTag('categories');
+      console.log('Revalidation complete!');
+    }
+  
         
   } catch (error) {
     console.error('記事作成エラー:', error);
@@ -211,11 +219,6 @@ export async function createPost(formData: FormData): Promise<void> {
     }
 
     throw new Error('記事の作成に失敗しました');
-  }
-
-  if (status === 'published') {
-    revalidateTag('posts');
-    revalidateTag('categories');
   }
 
   redirect('/dashboard/posts');
@@ -257,6 +260,13 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
       method: 'PATCH',
       body: JSON.stringify(requestBody),
     });
+
+    console.log('Revalidating tags...');
+    revalidateTag(`post-${slug}`);
+    revalidateTag('posts');  
+    revalidateTag('categories'); 
+    revalidateTag(`category-${slug}`);
+    console.log('Revalidation complete!');
     
   } catch (error) {
     console.error('記事更新エラー:', error);
@@ -275,11 +285,6 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
         : '記事の更新に失敗しました'
     );
   }
-
-  revalidateTag(`post-${slug}`);
-  revalidateTag('posts');  
-  revalidateTag('categories'); 
-  revalidateTag(`category-${slug}`);
 
   redirect('/dashboard/posts');
 }
