@@ -69,8 +69,16 @@ export function CategoryClient({ slug, initialPosts, totalPages }: CategoryClien
             </h3>
 
             <div className="text-sm text-gray-600 mb-4 space-y-1">
-              <p>👤 {post.authorName}</p>
-              <p>📅 {new Date(post.createdAt).toISOString().split('T')[0]}</p>
+              <p className="flex items-center gap-1">
+                <span>👤</span>
+                <span>{post.authorName}</span>
+              </p>
+              <p className="flex items-center gap-1">
+                <span>📅</span>
+                <time dateTime={post.createdAt}>
+                  {new Date(post.createdAt).toLocaleDateString('ja-JP')}
+                </time>
+              </p>
             </div>
 
             <Link
