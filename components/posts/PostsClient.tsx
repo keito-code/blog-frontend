@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { PostListData } from '@/types/post';
@@ -16,27 +16,26 @@ export default function PostsClient({ initialData }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 🔹 searchParamsを優先（戻った時のURL反映）
-  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
-  const [data, setData] = useState<PostListData | null>(initialData);
+  // 初期値を保持（再レンダリング時に変わらないようにする）
+  const initialDataRef = useRef(initialData);
 
-  // ✅ URL変化時にpageステートを同期（UX改善）
-  useEffect(() => {
-    const newPage = Number(searchParams.get('page')) || 1;
-    setPage(newPage);
-  }, [searchParams]);
+  //  ページネーション表示用（レンダリング時に計算）
+  const page = Number(searchParams.get('page')) || 1;
+  const [data, setData] = useState<PostListData | null>(initialDataRef.current);
 
-  // ページ変更時に再フェッチ
+  //  searchParams を直接監視（page は useEffect 内で計算）
   useEffect(() => {
-    if (page === 1) {
-      setData(initialData);
+    // useEffect 内で page を計算（派生値は依存配列に入れない）
+    const currentPage = Number(searchParams.get('page')) || 1;
+
+    if (currentPage === 1) {
+      setData(initialDataRef.current);
       return;
     }
 
     const controller = new AbortController();
-    fetch(`${apiUrl}${POST_ENDPOINTS.LIST}?page=${page}&pageSize=10&status=published`, {
+    fetch(`${apiUrl}${POST_ENDPOINTS.LIST}?page=${currentPage}&pageSize=10&status=published`, {
       signal: controller.signal,
-      cache: 'no-store',
     })
       .then((res) => res.json())
       .then((json) => setData(json.data ?? null))
@@ -44,10 +43,8 @@ export default function PostsClient({ initialData }: Props) {
         if (err.name !== 'AbortError') console.error('Fetch error:', err);
       });
 
-    router.replace(`/posts?page=${page}`, { scroll: true });
-
     return () => controller.abort();
-  }, [page]);
+  }, [searchParams]);
 
   const posts = data?.posts ?? [];
   const pagination = data?.pagination;
@@ -122,7 +119,10 @@ export default function PostsClient({ initialData }: Props) {
         <div className="flex justify-center items-center space-x-4">
           {page > 1 && (
             <button
-              onClick={() => setPage((p) => p - 1)}
+              onClick={() => {
+                const newPage = page - 1;
+                router.replace(newPage === 1 ? '/posts' : `/posts?page=${newPage}`, { scroll: true });
+              }}
               className="px-4 py-2 bg-white border rounded hover:bg-gray-50"
             >
               ← 前へ
@@ -133,7 +133,10 @@ export default function PostsClient({ initialData }: Props) {
           </span>
           {page < totalPages && (
             <button
-              onClick={() => setPage((p) => p + 1)}
+              onClick={() => {
+                const newPage = page + 1;
+                router.replace(`/posts?page=${newPage}`, { scroll: true });
+              }}
               className="px-4 py-2 bg-white border rounded hover:bg-gray-50"
             >
               次へ →
