@@ -1,82 +1,69 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { CategoryDetailData, CategoryPostsData, CATEGORY_ENDPOINTS, Category } from '@/types/category';
+import { CategoryDetailData, CategoryPostsData, CategoryListData, CATEGORY_ENDPOINTS } from '@/types/category';
 import { JSendResponse } from '@/types/api';
-
-// export const revalidate = 3600;は削除。
-// 理由は、動的レンダリング(searchParams)が、ルートセグメント(export const revalidate)を上書きするから。
-// 結果、Data Cacheしたいなら各fetch単位でする必要がある。
-// 動的レンダリング内でのルートセグメントでData Cache設定は無意味。
-// generateStaticParamsとsearchParamsは競合する
-// build後のファイルを確認するとSSGなっていなかったので、
-// generateStaticParamsはコメントアウトする
+import { CategoryClient } from '@/components/categories/CategoryClient';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
-/** 初回表示のパフォーマンス最適化のため
+// ISR: 各カテゴリページを再検証付きでキャッシュ
+export const revalidate = 86400;
+
+// ビルド時に全カテゴリの1ページ目を静的生成
 export async function generateStaticParams() {
-  const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.LIST}`, {
-    headers: { 'Accept': 'application/json' },
-  });
+  try {
+    const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.LIST}`, {
+      next: { revalidate: 86400 },
+      headers: { Accept: 'application/json' },
+    });
 
-  const json = await response.json();
+    if (!response.ok) return [];
 
-  if (json.status !== 'success' || !json.data?.categories) return [];
+    const json: JSendResponse<CategoryListData> = await response.json();
+    const categories = json.status === 'success' ? json.data?.categories ?? [] : [];
 
-  // { slug: 'example' } の形で返す
-  return json.data.categories.map((c: Category) => ({ slug: c.slug }));
-}
-*/
+    return categories.map((category) => ({
+      slug: category.slug,
+    }));
+  } catch (error) {
+    console.error('Error generating static params:', error);
+    return [];
+  }
+} 
+
 async function getCategory(slug: string) {
   try {
-    const response = await fetch(
-      `${apiUrl}${CATEGORY_ENDPOINTS.DETAIL(slug)}`,
-      {
-        next: { revalidate: 86400, tags: [`category-${slug}`] },
-        headers: {'Accept': 'application/json'},
-      }
-    );
+    const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.DETAIL(slug)}`, {
+      next: { revalidate: 86400, tags: [`category-${slug}`] },
+      headers: { Accept: 'application/json' },
+    });
 
     if (!response.ok) {
-      if (response.status === 404) {
-        return null;
-      }
+      if (response.status === 404) return null;
       console.error('Failed to fetch category:', response.status);
       return null;
     }
 
     const json: JSendResponse<CategoryDetailData> = await response.json();
-
-    if (json.status === 'success' && json.data?.category) {
-      return json.data.category;
-    }
-    
-    return null;
+    return json.status === 'success' ? json.data?.category ?? null : null;
   } catch (error) {
     console.error('Error fetching category:', error);
     return null;
   }
 }
 
-async function getCategoryPosts(
-  slug: string,
-  page: number = 1,
-  pageSize: number = 10
-) { 
-
+async function getCategoryPosts(slug: string, page = 1, pageSize = 10) {
   try {
     const params = new URLSearchParams({
       page: page.toString(),
       pageSize: pageSize.toString(),
     });
 
-    const response = await fetch(
-      `${apiUrl}${CATEGORY_ENDPOINTS.POSTS(slug)}?${params}`,
-      {
-        next: { revalidate: 86400, tags: ['posts', `category-${slug}`] },
-        headers: {'Accept': 'application/json'},
-      }
-    );
+    const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.POSTS(slug)}?${params}`, {
+      next: { revalidate: 86400, tags: ['posts', `category-${slug}`] },
+      headers: { Accept: 'application/json' },
+    });
 
     if (!response.ok) {
       console.error('Failed to fetch category posts:', response.status);
@@ -84,12 +71,7 @@ async function getCategoryPosts(
     }
 
     const json: JSendResponse<CategoryPostsData> = await response.json();
-
-    if (json.status === 'success' && json.data?.posts && json.data?.pagination) {
-      return json.data;
-    }
-    
-    return null;
+    return json.status === 'success' ? json.data ?? null : null;
   } catch (error) {
     console.error('Error fetching category posts:', error);
     return null;
@@ -98,28 +80,22 @@ async function getCategoryPosts(
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string }>;
 }
 
-export default async function CategoryPostsPage({ params, searchParams }: PageProps) {
+export default async function CategoryPostsPage({ params }: PageProps) {
   const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
-  const currentPage = Number(resolvedSearchParams.page) || 1;
-  const pageSize = 10;
+  const slug = resolvedParams.slug;
 
-  // カテゴリー情報と投稿を並列で取得
   const [category, postsData] = await Promise.all([
-    getCategory(resolvedParams.slug),
-    getCategoryPosts(resolvedParams.slug, currentPage, pageSize),
+    getCategory(slug),
+    getCategoryPosts(slug, 1),
   ]);
 
-  if (!category) {
-    notFound();
-  }
+  if (!category) notFound();
 
-  const posts = postsData?.posts || [];
+  const posts = postsData?.posts ?? [];
   const pagination = postsData?.pagination;
-  const totalPages = pagination ? pagination.totalPages : 0;
+  const totalPages = pagination?.totalPages ?? 0;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -146,104 +122,20 @@ export default async function CategoryPostsPage({ params, searchParams }: PagePr
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">{category.name}</h1>
         <p className="text-gray-600">
-          {pagination?.count === 0
-            ? 'このカテゴリーには記事がありません'
-            : `${pagination?.count || 0} 件の記事`
-          }
+          {pagination?.count
+            ? `${pagination.count} 件の記事`
+            : 'このカテゴリーには記事がありません'}
         </p>
       </div>
 
-      {/* 投稿一覧 */}
-      {posts.length > 0 && (
-        <>
-          <div className="space-y-6">
-            {posts.map((post) => (
-              <article
-                key={post.slug}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-              >
-                <Link href={`/posts/${post.slug}`}>
-                  <h2 className="text-2xl font-bold mb-2 hover:text-blue-600">
-                    {post.title}
-                  </h2>
-                </Link>
-                
-                {/* カテゴリータグ（既にカテゴリーページなので省略可） */}
-                
-                <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
-                  <div className="flex items-center space-x-4">
-                    <span>投稿者: {post.authorName}</span>
-                    <span>
-                      {new Date(post.createdAt).toLocaleDateString('ja-JP')}
-                    </span>
-                  </div>
-                  <Link
-                    href={`/posts/${post.slug}`}
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    続きを読む →
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          {/* ページネーション */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-2 mt-8">
-              {/* 前へボタン */}
-              {currentPage > 1 && (
-                <Link
-                  href={`/categories/${resolvedParams.slug}?page=${currentPage - 1}`}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  ← 前へ
-                </Link>
-              )}
-              
-              {/* ページ番号 */}
-              <div className="flex space-x-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-
-                  return (
-                    <Link
-                      key={pageNum}
-                      href={`/categories/${resolvedParams.slug}?page=${pageNum}`}
-                      className={`px-3 py-1 rounded ${
-                        pageNum === currentPage
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                    >
-                      {pageNum}
-                    </Link>
-                  );
-                })}
-              </div>
-
-              {/* 次へボタン */}
-              {currentPage < totalPages && (
-                <Link
-                  href={`/categories/${resolvedParams.slug}?page=${currentPage + 1}`}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  次へ →
-                </Link>
-              )}
-            </div>
-          )}
-        </>
-      )}
+      {/* 初回表示（ISR） + ページング部分（CSR） */}
+      <Suspense fallback={<p className="text-center py-6 text-gray-600">読み込み中...</p>}>
+        <CategoryClient
+          slug={slug}
+          initialPosts={posts}
+          totalPages={totalPages}
+        />
+      </Suspense>
     </div>
   );
 }
