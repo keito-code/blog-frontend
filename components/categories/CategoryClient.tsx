@@ -30,10 +30,12 @@ export function CategoryClient({ slug, initialPosts, totalPages }: CategoryClien
       return;
     }
 
+    const controller = new AbortController();
     setLoading(true);
 
     fetch(`${apiUrl}${CATEGORY_ENDPOINTS.POSTS(slug)}?page=${currentPage}`, {
       headers: { Accept: 'application/json' },
+      signal: controller.signal,
     })
       .then((res) => res.json())
       .then((json: JSendResponse<CategoryPostsData>) => {
@@ -41,8 +43,13 @@ export function CategoryClient({ slug, initialPosts, totalPages }: CategoryClien
           setPosts(json.data.posts);
         }
       })
+      .catch((err) => {
+        if (err.name !== 'AbortError') console.error('Fetch error:', err);
+      })
       .finally(() => setLoading(false));
-  }, [searchParams.toString()]); // ✅クエリ変化を確実に検知
+
+    return () => controller.abort();
+  }, [searchParams]);
 
   if (loading) return <p className="animate-pulse text-center py-6 text-gray-500">読み込み中...</p>;
   if (!posts.length) return <p className="text-center py-6 text-gray-600">{slug} の記事がありません。</p>;
