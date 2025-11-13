@@ -70,42 +70,53 @@ const nextConfig: NextConfig = {
     ? securityHeaders.filter((h) => h.key !== 'Content-Security-Policy')
     : securityHeaders;
 
+    const publicCacheHeader = {
+      key: 'Cache-Control',
+      value: 'public, max-age=0, s-maxage=86400, stale-while-revalidate=86400',
+    };
+
     return [
       // 公開ページ: 積極的キャッシュ
       {
         source: '/',
         headers: [
           ...activeSecurityHeaders,
+          publicCacheHeader,
         ],
       },
       {
         source: '/posts',
         headers: [
           ...activeSecurityHeaders,
+          publicCacheHeader,
         ],
       },
       {
         source: '/posts/:slug',
         headers: [
           ...activeSecurityHeaders,
+          publicCacheHeader,
         ],
       },
       {
         source: '/categories',
         headers: [
           ...activeSecurityHeaders,
+          publicCacheHeader,
         ],
       },
       {
         source: '/categories/:slug',
         headers: [
           ...activeSecurityHeaders,
+          publicCacheHeader,
         ],
       },
       {
         source: '/search',
         headers: [
           ...activeSecurityHeaders,
+          publicCacheHeader,
         ],
       },
       // 認証ページ: キャッシュなし
