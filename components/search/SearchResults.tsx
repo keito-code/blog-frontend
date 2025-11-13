@@ -7,7 +7,7 @@ import { Search, ArrowLeft } from 'lucide-react';
 import { PostListItem, POST_ENDPOINTS } from '@/types/post';
 import { sanitizeSearchQuery } from '@/utils/sanitize';
 
-const apiUrl = process.env.NEXT_PUBLIC_DJANGO_API_URL || 'http://localhost:8000';
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 interface SearchResult {
   posts: PostListItem[];
