@@ -7,7 +7,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 // CSP
 const ContentSecurityPolicy = `
   default-src 'none';
-  script-src 'self' 'unsafe-inline' ${isDevelopment ? "'unsafe-eval'" : ""};
+  script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com ${isDevelopment ? "'unsafe-eval'" : ""};
   style-src 'self';
   img-src 'self';
   font-src 'self';
