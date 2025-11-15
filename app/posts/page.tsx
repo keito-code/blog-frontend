@@ -17,6 +17,14 @@ export default async function PostsPage() {
     }
   );
 
+  if (!response.ok) {
+    return (
+      <div className="container mx-auto px-4 py-12 text-center">
+        <p className="text-gray-600">記事の読み込みに失敗しました。</p>
+      </div>
+    );
+  }
+
   const json = await response.json();
   const initialData = json?.data ?? null;
 
