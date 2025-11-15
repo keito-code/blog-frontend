@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import SearchResults from '@/components/search/SearchResults';
 
-export const revalidate = 86400;
+export const dynamic = 'force-static'; 
 
 export default async function SearchPage() {
   return (
