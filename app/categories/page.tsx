@@ -2,8 +2,7 @@ import Link from 'next/link';
 import { CategoryListData, CATEGORY_ENDPOINTS } from '@/types/category';
 import { JSendResponse } from '@/types/api';
 
-// 静的レンダリング内でFull Route CacheとData Cacheが適用される
-export const revalidate = 86400; 
+export const dynamic = 'force-static'; 
 
 const apiUrl= process.env.DJANGO_API_URL || 'http://localhost:8000';
 

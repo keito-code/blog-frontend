@@ -5,16 +5,14 @@ import { CategoryDetailData, CategoryPostsData, CategoryListData, CATEGORY_ENDPO
 import { JSendResponse } from '@/types/api';
 import { CategoryClient } from '@/components/categories/CategoryClient';
 
-const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
+export const dynamic = 'force-static'; 
 
-// ISR: 各カテゴリページを再検証付きでキャッシュ
-export const revalidate = 86400;
+const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 // ビルド時に全カテゴリの1ページ目を静的生成
 export async function generateStaticParams() {
   try {
     const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.LIST}`, {
-      next: { revalidate: 86400 },
       headers: { Accept: 'application/json' },
     });
 
@@ -35,7 +33,7 @@ export async function generateStaticParams() {
 async function getCategory(slug: string) {
   try {
     const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.DETAIL(slug)}`, {
-      next: { revalidate: 86400, tags: [`category-${slug}`] },
+      next: { tags: [`category-${slug}`] },
       headers: { Accept: 'application/json' },
     });
 
@@ -61,7 +59,7 @@ async function getCategoryPosts(slug: string, page = 1, pageSize = 10) {
     });
 
     const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.POSTS(slug)}?${params}`, {
-      next: { revalidate: 86400, tags: ['posts', `category-${slug}`] },
+      next: { tags: ['posts', `category-${slug}`] },
       headers: { Accept: 'application/json' },
     });
 

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { PostDetail, POST_ENDPOINTS, PostListItem } from '@/types/post';
 import ServerMarkdownRenderer from '@/components/ServerMarkdownRenderer';
 
-export const revalidate = 86400;
+export const dynamic = 'force-static'; 
 // 新規記事も動的に生成
 export const dynamicParams = true;
 
@@ -29,7 +29,7 @@ async function getPost(slug: string): Promise<PostDetail | null> {
   try {
     const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`, 
     {
-      next: { revalidate: 86400, tags:[`post-${slug}`]},
+      next: { tags:[`post-${slug}`]},
       headers: { 'Accept': 'application/json' },
     });
     if (!response.ok) return null;

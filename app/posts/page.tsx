@@ -3,16 +3,16 @@ import Link from 'next/link';
 import PostsClient from '@/components/posts/PostsClient';
 import { POST_ENDPOINTS } from '@/types/post';
 
-const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
+export const dynamic = 'force-static'; 
 
-export const revalidate = 86400;
+const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 export default async function PostsPage() {
   // page=1のみ静的キャッシュ対象（ISR）
   const response = await fetch(
     `${apiUrl}${POST_ENDPOINTS.LIST}?page=1&pageSize=10&status=published`,
     {
-      next: { revalidate: 86400, tags: ['posts'] },
+      next: { tags: ['posts'] },
       headers: { Accept: 'application/json' },
     }
   );

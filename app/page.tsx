@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { POST_ENDPOINTS, PostListItem, PostListData } from '@/types/post';
 import { CATEGORY_ENDPOINTS, CategoryListData } from '@/types/category';
 
-export const revalidate = 86400;
+export const dynamic = 'force-static';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
