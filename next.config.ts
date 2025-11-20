@@ -119,13 +119,14 @@ const nextConfig: NextConfig = {
           publicCacheHeader,
         ],
       },
-      // 認証ページ: キャッシュなし
       {
         source: '/auth/:path*',
         headers: [
           ...activeSecurityHeaders,
+          publicCacheHeader,
         ],
       },
+      
       {
         source: '/dashboard/:path*',
         headers: [
