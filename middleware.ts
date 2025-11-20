@@ -15,7 +15,6 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/dashboard')) {
     if (!isAuthenticated) {
       const loginUrl = new URL('/auth/login', request.url);
-      loginUrl.searchParams.set('from', pathname);
       return NextResponse.redirect(loginUrl);
     }
   }
