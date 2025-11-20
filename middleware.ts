@@ -5,12 +5,11 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const accessToken = request.cookies.get('access_token')?.value;
-  const refreshToken = request.cookies.get('refresh_token')?.value;
 
   // 認証状態の判定
-  // 「アクセストークンがある」 または 「リフレッシュトークンがある」 なら true
+  // 「アクセストークンがある」なら true
   // !! は値を boolean (true/false) に強制変換する
-  const isAuthenticated = !!(accessToken || refreshToken);
+  const isAuthenticated = !!accessToken;
 
   if (pathname.startsWith('/dashboard')) {
     if (!isAuthenticated) {
