@@ -1,23 +1,15 @@
 import { Metadata } from 'next';
-import { getCurrentUser } from '@/app/actions/auth';
-import { redirect } from 'next/navigation';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
-
+export const dynamic = 'force-static';
 
 export const metadata: Metadata = {
   title: '新規登録',
   description: 'ブログシステムに新規登録',
 };
 
-export default async function RegisterPage() {
-  const user = await getCurrentUser();
-  
-  if (user) {
-    redirect('/dashboard');
-  }
+export default function RegisterPage() {
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
