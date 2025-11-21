@@ -1,25 +1,20 @@
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getCurrentUser } from '@/app/actions/auth';
+import { Suspense } from 'react';
+import UserProfile from './_components/UserProfile';
 
-// 宣言することによりbuild時の警告メッセージが消える
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect('/auth/login');
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* メインコンテンツ */}
       <main className="p-8 max-w-6xl mx-auto">
         <div className="bg-white p-8 rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-5 text-gray-800">
-            ようこそ、{user.username}さん！
-          </h2>
+
+          {/* データ取得中はfallbackが表示され、その間に下のリンク等は表示されます */}
+          <Suspense fallback={<div className="h-40 bg-gray-100 animate-pulse rounded mb-8">ユーザー情報を読み込み中...</div>}>
+             <UserProfile />
+          </Suspense>
           
           {/* 投稿管理リンク */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
@@ -48,17 +43,6 @@ export default async function DashboardPage() {
             </Link>
           </div>
           
-          {/* アカウント情報 */}
-          <div className="bg-gray-50 p-5 rounded mb-5">
-            <h3 className="text-base font-semibold mb-4 text-gray-600">
-              アカウント情報
-            </h3>
-            <div className="space-y-1 text-gray-700">
-              <p>ユーザー名: {user.username}</p>
-              <p>メールアドレス: {user.email}</p>
-              <p>登録日: {new Date(user.dateJoined).toLocaleDateString('ja-JP')}</p>
-            </div>
-          </div>
         </div>
       </main>
     </div>
