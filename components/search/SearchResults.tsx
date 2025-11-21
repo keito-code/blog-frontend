@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Search, ArrowLeft } from 'lucide-react';
 import { PostListItem, POST_ENDPOINTS } from '@/types/post';
@@ -15,7 +15,6 @@ interface SearchResult {
 }
 
 export default function SearchResults() {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   // Hydration回避: 初期値はサーバーとクライアントで一致させる
@@ -111,6 +110,14 @@ export default function SearchResults() {
     return () => controller.abort();
   }, [mounted, searchParams]);
 
+  // リンク生成ヘルパー
+  const createPageLink = (newPage: number) => {
+    const encodedQ = encodeURIComponent(rawQuery);
+    return newPage === 1
+      ? `/search?q=${encodedQ}`
+      : `/search?q=${encodedQ}&page=${newPage}`;
+  };
+
   // クエリが空または短い場合
   if (!rawQuery || rawQuery.length < 2) {
     return (
@@ -203,8 +210,8 @@ export default function SearchResults() {
   }
 
   // 検索結果表示
-  const posts = data.posts;
-  const totalCount = data.count;
+  const posts = data.posts ?? [];
+  const totalCount = data.count ?? 0;
   const totalPages = Math.ceil(totalCount / 10);
 
   return (
@@ -264,7 +271,10 @@ export default function SearchResults() {
               </p>
               <p className="flex items-center gap-1">
                 <span>📅</span>
-                <time dateTime={post.createdAt}>
+                <time 
+                  dateTime={post.createdAt}
+                  suppressHydrationWarning={true}
+                >
                   {new Date(post.createdAt).toLocaleDateString('ja-JP')}
                 </time>
               </p>
@@ -283,34 +293,32 @@ export default function SearchResults() {
       {/* ページネーション */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center space-x-4">
-          {page > 1 && (
-            <button
-              onClick={() => {
-                const newPage = page - 1;
-                const url = newPage === 1
-                  ? `/search?q=${encodeURIComponent(rawQuery)}`
-                  : `/search?q=${encodeURIComponent(rawQuery)}&page=${newPage}`;
-                router.replace(url, { scroll: true });
-              }}
-              className="px-4 py-2 bg-white border rounded hover:bg-gray-50"
+          {page > 1 ? (
+            <Link
+              href={createPageLink(page - 1)}
+              className="px-4 py-2 bg-white border rounded hover:bg-gray-50 transition-colors"
+              scroll={true}
             >
               ← 前へ
-            </button>
+            </Link>
+          ) : (
+             <span className="px-4 py-2 border border-transparent invisible">← 前へ</span>
           )}
+          
           <span className="text-gray-600">
             {page} / {totalPages}
           </span>
-          {page < totalPages && (
-            <button
-              onClick={() => {
-                const newPage = page + 1;
-                const url = `/search?q=${encodeURIComponent(rawQuery)}&page=${newPage}`;
-                router.replace(url, { scroll: true });
-              }}
-              className="px-4 py-2 bg-white border rounded hover:bg-gray-50"
+          
+          {page < totalPages ? (
+            <Link
+              href={createPageLink(page + 1)}
+              className="px-4 py-2 bg-white border rounded hover:bg-gray-50 transition-colors"
+              scroll={true}
             >
               次へ →
-            </button>
+            </Link>
+          ) : (
+             <span className="px-4 py-2 border border-transparent invisible">次へ →</span>
           )}
         </div>
       )}

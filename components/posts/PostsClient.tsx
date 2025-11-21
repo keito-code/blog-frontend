@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { PostListData } from '@/types/post';
 import { POST_ENDPOINTS } from '@/types/post';
@@ -13,19 +13,14 @@ interface Props {
 }
 
 export default function PostsClient({ initialData }: Props) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 初期値を保持（再レンダリング時に変わらないようにする）
+  // 初期値を保持
   const initialDataRef = useRef(initialData);
 
-  //  ページネーション表示用（レンダリング時に計算）
-  const page = Number(searchParams.get('page')) || 1;
   const [data, setData] = useState<PostListData | null>(initialDataRef.current);
 
-  //  searchParams を直接監視（page は useEffect 内で計算）
   useEffect(() => {
-    // useEffect 内で page を計算（派生値は依存配列に入れない）
     const currentPage = Number(searchParams.get('page')) || 1;
 
     if (currentPage === 1) {
@@ -46,8 +41,11 @@ export default function PostsClient({ initialData }: Props) {
     return () => controller.abort();
   }, [searchParams]);
 
-  const posts = data?.posts ?? [];
+  // ページ番号は必ずデータから取得（Hydration Mismatch防止の肝）
   const pagination = data?.pagination;
+  const page = pagination?.page || 1; 
+  
+  const posts = data?.posts ?? [];
   const totalPages = pagination?.totalPages ?? 1;
   const totalCount = pagination?.count ?? 0;
 
@@ -58,6 +56,11 @@ export default function PostsClient({ initialData }: Props) {
       </div>
     );
   }
+
+  // リンク生成用のヘルパー関数
+  const getPageLink = (p: number) => {
+    return p === 1 ? '/posts' : `/posts?page=${p}`;
+  };
 
   return (
     <>
@@ -98,7 +101,11 @@ export default function PostsClient({ initialData }: Props) {
               </p>
               <p className="flex items-center gap-1">
                 <span>📅</span>
-                <time dateTime={post.createdAt}>
+                {/* ★日付のHydrationエラー対策を追加 */}
+                <time 
+                  dateTime={post.createdAt}
+                  suppressHydrationWarning={true}
+                >
                   {new Date(post.createdAt).toLocaleDateString('ja-JP')}
                 </time>
               </p>
@@ -117,30 +124,32 @@ export default function PostsClient({ initialData }: Props) {
       {/* ページネーション */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center space-x-4">
-          {page > 1 && (
-            <button
-              onClick={() => {
-                const newPage = page - 1;
-                router.replace(newPage === 1 ? '/posts' : `/posts?page=${newPage}`, { scroll: true });
-              }}
-              className="px-4 py-2 bg-white border rounded hover:bg-gray-50"
+          {page > 1 ? (
+            <Link
+              href={getPageLink(page - 1)}
+              className="px-4 py-2 bg-white border rounded hover:bg-gray-50 transition-colors"
+              scroll={true}
             >
               ← 前へ
-            </button>
+            </Link>
+           ) : (
+            <span className="px-4 py-2 border border-transparent invisible">← 前へ</span>
           )}
+
           <span className="text-gray-600">
             {page} / {totalPages}
           </span>
-          {page < totalPages && (
-            <button
-              onClick={() => {
-                const newPage = page + 1;
-                router.replace(`/posts?page=${newPage}`, { scroll: true });
-              }}
-              className="px-4 py-2 bg-white border rounded hover:bg-gray-50"
+
+          {page < totalPages ? (
+            <Link
+              href={getPageLink(page + 1)}
+              className="px-4 py-2 bg-white border rounded hover:bg-gray-50 transition-colors"
+              scroll={true}
             >
               次へ →
-            </button>
+            </Link>
+          ) : (
+            <span className="px-4 py-2 border border-transparent invisible">次へ →</span>
           )}
         </div>
       )}
