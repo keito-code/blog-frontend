@@ -8,7 +8,6 @@ export const dynamic = 'force-static';
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 export default async function PostsPage() {
-  // page=1のみ静的キャッシュ対象（ISR）
   const response = await fetch(
     `${apiUrl}${POST_ENDPOINTS.LIST}?page=1&pageSize=10&status=published`,
     {
