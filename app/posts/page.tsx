@@ -1,11 +1,35 @@
 import { Suspense } from 'react';
+import { cacheLife, cacheTag } from 'next/cache'
 import Link from 'next/link';
-import PostsContent from './_components/PostsContent';
+import PostsClient from '@/components/posts/PostsClient';
+import { POST_ENDPOINTS } from '@/types/post';
 
-export default function PostsPage() {
+const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
+
+export default async function PostsPage() {
+  'use cache'
+  cacheLife('max')
+  cacheTag('posts')
+
+  const response = await fetch(
+    `${apiUrl}${POST_ENDPOINTS.LIST}?page=1&pageSize=10&status=published`,
+    { headers: { Accept: 'application/json' } }
+  );
+
+  if (!response.ok) {
+    return (
+      <div className="container mx-auto px-4 py-12 text-center">
+        <p className="text-gray-600">記事の読み込みに失敗しました。</p>
+      </div>
+    );
+  }
+
+  const json = await response.json();
+  const initialData = json?.data ?? null;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー - 静的に生成される */}
+      {/* ヘッダー */}
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
@@ -18,28 +42,11 @@ export default function PostsPage() {
         </div>
       </header>
 
-      {/* メインコンテンツ - 動的にストリーミング */}
+      {/* メインコンテンツ */}
       <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <Suspense fallback={
-          <div className="space-y-6">
-            {/* スケルトンローディング */}
-            <div className="h-6 w-48 bg-gray-200 animate-pulse rounded"></div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-white rounded-lg shadow-md p-6 h-80 animate-pulse">
-                  <div className="h-6 bg-gray-200 rounded mb-3 w-20"></div>
-                  <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-6 bg-gray-200 rounded mb-4 w-3/4"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-2 w-1/2"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-4 w-1/2"></div>
-                  <div className="mt-auto h-10 bg-gray-200 rounded"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        }>
-          <PostsContent />
-        </Suspense>
+      <Suspense fallback={<p className="text-center text-gray-500">読み込み中...</p>}>
+        <PostsClient initialData={initialData} />
+      </Suspense>
       </main>
     </div>
   );
