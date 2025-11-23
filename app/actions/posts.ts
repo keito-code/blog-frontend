@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { revalidateTag } from 'next/cache';
+import { updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { 
   POST_ENDPOINTS, 
@@ -198,12 +198,12 @@ export async function createPost(formData: FormData): Promise<void> {
     });
 
     if (status === 'published') {
-      console.log('Revalidating posts and categories...');
-      // @ts-expect-error Next.js 16 canary type mismatch
-      revalidateTag('posts');
-      // @ts-expect-error Next.js 16 canary type mismatch
-      revalidateTag('categories');
-      console.log('Revalidation complete!');
+      console.log('Updating posts and categories...');
+
+      updateTag('posts');
+      updateTag('categories');
+
+      console.log('Tag update complete!');
     }
   
         
@@ -263,16 +263,14 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
       body: JSON.stringify(requestBody),
     });
 
-    console.log('Revalidating tags...');
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag(`post-${slug}`);
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag('posts');  
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag('categories'); 
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag(`category-${slug}`);
-    console.log('Revalidation complete!');
+    console.log('Updating tags...');
+
+    updateTag(`post-${slug}`);
+    updateTag('posts');  
+    updateTag('categories'); 
+    updateTag(`category-${slug}`);
+
+    console.log('Tag update complete!');
     
   } catch (error) {
     console.error('記事更新エラー:', error);
@@ -301,14 +299,10 @@ export async function deletePost(slug: string): Promise<ActionResult<undefined>>
       method: 'DELETE',
     });
 
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag(`post-${slug}`);
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag('posts'); 
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag('categories'); 
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag(`category-${slug}`);
+    updateTag(`post-${slug}`);
+    updateTag('posts'); 
+    updateTag('categories'); 
+    updateTag(`category-${slug}`);
     
     return {
       status: 'success',
@@ -352,14 +346,10 @@ export async function updatePostStatus(
       body: JSON.stringify({ status }),
     });
 
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag(`post-${slug}`);
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag('posts');
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag('categories'); 
-    // @ts-expect-error Next.js 16 canary type mismatch
-    revalidateTag(`category-${slug}`);
+    updateTag(`post-${slug}`);
+    updateTag('posts');
+    updateTag('categories'); 
+    updateTag(`category-${slug}`);
     
     return {
       status: 'success',
