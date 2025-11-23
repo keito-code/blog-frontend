@@ -44,6 +44,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
 
   // ビルドタイムアウトエラーを防ぐため、静的ページ生成の制限時間を延長
   staticPageGenerationTimeout: 120,
@@ -57,11 +58,6 @@ const nextConfig: NextConfig = {
   // TypeScriptエラーでビルドを失敗させる
   typescript: {
     ignoreBuildErrors: false,
-  },
-
-  // ESLintエラーでビルドを失敗させる
-  eslint: {
-    ignoreDuringBuilds: false,
   },
 
   // セキュリティヘッダー + キャッシュ戦略

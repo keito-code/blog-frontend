@@ -2,8 +2,6 @@ import { Metadata } from 'next';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import Link from 'next/link';
 
-export const dynamic = 'force-static';
-
 export const metadata: Metadata = {
   title: '新規登録',
   description: 'ブログシステムに新規登録',

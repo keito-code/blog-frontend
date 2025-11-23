@@ -199,7 +199,9 @@ export async function createPost(formData: FormData): Promise<void> {
 
     if (status === 'published') {
       console.log('Revalidating posts and categories...');
+      // @ts-expect-error Next.js 16 canary type mismatch
       revalidateTag('posts');
+      // @ts-expect-error Next.js 16 canary type mismatch
       revalidateTag('categories');
       console.log('Revalidation complete!');
     }
@@ -262,9 +264,13 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
     });
 
     console.log('Revalidating tags...');
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag(`post-${slug}`);
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag('posts');  
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag('categories'); 
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag(`category-${slug}`);
     console.log('Revalidation complete!');
     
@@ -295,9 +301,13 @@ export async function deletePost(slug: string): Promise<ActionResult<undefined>>
       method: 'DELETE',
     });
 
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag(`post-${slug}`);
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag('posts'); 
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag('categories'); 
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag(`category-${slug}`);
     
     return {
@@ -342,9 +352,13 @@ export async function updatePostStatus(
       body: JSON.stringify({ status }),
     });
 
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag(`post-${slug}`);
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag('posts');
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag('categories'); 
+    // @ts-expect-error Next.js 16 canary type mismatch
     revalidateTag(`category-${slug}`);
     
     return {

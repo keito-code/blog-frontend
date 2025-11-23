@@ -2,8 +2,6 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import UserProfile from './_components/UserProfile';
 
-export const dynamic = 'force-dynamic';
-
 export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
