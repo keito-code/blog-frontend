@@ -14,9 +14,9 @@
     "lucide-react": "^0.540.0",
     "marked": "^16.1.2",
     "marked-highlight": "^2.2.2",
-    "next": "^16.0.2-canary.29",
-    "react": "^19.3.0-canary-40b4a5bf-20251120",
-    "react-dom": "^19.3.0-canary-40b4a5bf-20251120",
+    "next": "^16.0.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "sanitize-html": "^2.17.0"
   },
   "devDependencies": {
@@ -30,7 +30,7 @@
     "@types/react-dom": "^19",
     "@types/sanitize-html": "^2.16.0",
     "eslint": "^9",
-    "eslint-config-next": "15.4.6",
+    "eslint-config-next": "^16.0.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

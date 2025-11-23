@@ -156,24 +156,5 @@ const nextConfig: NextConfig = {
   env: {
     DJANGO_API_URL: process.env.DJANGO_API_URL,
   },
-
-  // Webpack設定
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      };
-    }
-    
-    // 本番環境ではソースマップを無効化
-    if (isProduction) {
-      config.devtool = false;
-    }
-    
-    return config;
-  },
 };
 export default nextConfig;
