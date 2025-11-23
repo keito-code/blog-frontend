@@ -6,7 +6,8 @@ import { POST_ENDPOINTS } from '@/types/post';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
-export default async function PostsPage() {
+// データ取得だけを別関数に切り出す
+async function getCachedPosts() {
   'use cache'
   cacheLife('max')
   cacheTag('posts')
@@ -16,16 +17,24 @@ export default async function PostsPage() {
     { headers: { Accept: 'application/json' } }
   );
 
-  if (!response.ok) {
+  if (!response.ok) return null;
+
+  const json =await response.json();
+  return json?.data ?? null;
+}
+
+export default async function PostsPage() {
+  // キャッシュされた関数を呼び出す
+  const initialData = await getCachedPosts();
+
+  // エラーハンドリング
+  if (!initialData) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
         <p className="text-gray-600">記事の読み込みに失敗しました。</p>
       </div>
     );
   }
-
-  const json = await response.json();
-  const initialData = json?.data ?? null;
 
   return (
     <div className="min-h-screen bg-gray-50">
