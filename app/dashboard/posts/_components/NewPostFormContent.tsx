@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getCurrentUser } from '@/app/actions/auth';
+import { getCurrentUser } from '@/app/lib/auth';
 import { createPost } from '@/app/actions/posts';
 import { CATEGORY_ENDPOINTS, Category } from '@/types/category';
 

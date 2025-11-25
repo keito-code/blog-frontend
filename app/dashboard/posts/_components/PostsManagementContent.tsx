@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getCurrentUser } from '@/app/actions/auth';
+import { getCurrentUser } from '@/app/lib/auth';
 import { PostListItem } from '@/types/post';
 import { USER_ENDPOINTS } from '@/types/user';
 import { PostActions } from '@/components/posts/PostActions';
@@ -17,7 +17,6 @@ async function getMyPosts(): Promise<PostListItem[]> {
     const response = await fetch(
       `${process.env.DJANGO_API_URL}${USER_ENDPOINTS.MY_POSTS}`,
       {
-        cache: 'no-store', // 動的取得
         headers: {
           'Cookie': cookieHeader,
           'Accept': 'application/json',
