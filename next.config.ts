@@ -47,7 +47,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
 
   // ビルドタイムアウトエラーを防ぐため、静的ページ生成の制限時間を延長
-  staticPageGenerationTimeout: 120,
+  staticPageGenerationTimeout: 300,
   
   // React Strict Mode
   reactStrictMode: true,
