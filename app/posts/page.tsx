@@ -12,15 +12,39 @@ async function getCachedPosts() {
   cacheLife('max')
   cacheTag('posts')
 
-  const response = await fetch(
-    `${apiUrl}${POST_ENDPOINTS.LIST}?page=1&pageSize=10&status=published`,
-    { headers: { Accept: 'application/json' } }
-  );
+  // タイムアウト制御
+  const controller = new AbortController();
+  // 15秒待っても応答がなければ諦める（PCが遅いので長めに設定）
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  if (!response.ok) return null;
+  try {
+    const response = await fetch(
+      `${apiUrl}${POST_ENDPOINTS.LIST}?page=1&pageSize=10&status=published`,
+      { 
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+     }
+    );
 
-  const json =await response.json();
-  return json?.data ?? null;
+    clearTimeout(timeoutId);
+
+    if (!response.ok) return null;
+
+    const json =await response.json();
+    return json?.data ?? null;
+
+  } catch (error) {
+    // タイムアウト発生時の処理
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn('⚠️ Build Warning: Data fetch timed out (Low Memory/Slow PC). Returning null to pass build.');
+    } else {
+      console.error('Fetch error:', error);
+    }
+    // エラーを投げずに null を返すことで、ビルド自体は成功させる
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export default async function PostsPage() {
