@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { getCurrentUser } from '@/app/lib/auth';
 import { redirect } from 'next/navigation';
+import { PrivateUser } from '@/types';
 
 /**
  * ① DashboardPage（PPR Static Shell）
@@ -49,7 +50,7 @@ async function DashboardRuntime() {
   return <UserProfile user={user} />;
 }
 
-function UserProfile({ user }: { user: any }) {
+function UserProfile({ user }: { user: PrivateUser }) {
   return (
     <>
       <h2 className="text-2xl font-semibold mb-5 text-gray-800">
