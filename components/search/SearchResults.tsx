@@ -73,6 +73,7 @@ export default function SearchResults() {
         const url = `${apiUrl}${POST_ENDPOINTS.LIST}?${params}`;
 
         const response = await fetch(url, {
+          cache: 'no-store', // ブラウザでキャッシュさせないため
           signal: controller.signal,
           headers: { 'Accept': 'application/json' },
         });
