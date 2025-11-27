@@ -29,8 +29,11 @@ export default function PostsClient({ initialData }: Props) {
     }
 
     const controller = new AbortController();
+
     fetch(`${apiUrl}${POST_ENDPOINTS.LIST}?page=${currentPage}&pageSize=10&status=published`, {
       signal: controller.signal,
+      cache: 'no-store',
+      headers: { 'Accept': 'application/json' }
     })
       .then((res) => res.json())
       .then((json) => setData(json.data ?? null))
