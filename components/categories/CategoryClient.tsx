@@ -42,6 +42,7 @@ export function CategoryClient({ slug, initialPosts, totalPages }: CategoryClien
     setLoading(true);
 
     fetch(`${apiUrl}${CATEGORY_ENDPOINTS.POSTS(slug)}?page=${pageParam}`, {
+      cache: 'no-store',
       headers: { Accept: 'application/json' },
       signal: controller.signal,
     })
