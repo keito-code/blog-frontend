@@ -3,7 +3,7 @@
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import type { CSRFTokenResponse } from '@/types/auth';
-import type { UserResponse, PrivateUser } from '@/types/user';
+import type { UserResponse } from '@/types/user';
 import { AUTH_ENDPOINTS } from '@/types/auth';
 import { USER_ENDPOINTS } from '@/types/user';
 import { 
@@ -157,12 +157,12 @@ async function apiFetchPublic<T = unknown>(
 
 /**
  * 認証付きAPIフェッチ関数
- * 認証が必要なエンドポイント用（getCurrentUser等）
  */
 async function apiFetchAuth<T = unknown>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+
   const cookieStore = await cookies();
   
   // access_tokenの存在確認
@@ -173,32 +173,6 @@ async function apiFetchAuth<T = unknown>(
   
   // 通常のapiFetch処理を実行
   return apiFetchPublic<T>(endpoint, options);
-}
-
-/**
- * 現在のユーザー情報を取得
- */
-export async function getCurrentUser(): Promise<PrivateUser | null> {
-  try {
-    const data = await apiFetchAuth<UserResponse>(
-      USER_ENDPOINTS.ME,
-      {
-        method: 'GET',
-        cache: 'no-store',
-      }
-    );
-    
-    return data.user as PrivateUser;
-    
-  } catch (error) {
-    // 認証エラーの場合はnullを返す（未ログイン状態）
-    if (error instanceof AuthenticationError) {
-      return null;
-    }
-    
-    console.error('Get current user error:', error);
-    return null;
-  }
 }
 
 /**

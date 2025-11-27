@@ -1,19 +1,19 @@
 import Link from 'next/link';
+import { cacheLife, cacheTag } from 'next/cache'
 import { CategoryListData, CATEGORY_ENDPOINTS } from '@/types/category';
 import { JSendResponse } from '@/types/api';
-
-export const dynamic = 'force-static'; 
 
 const apiUrl= process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 async function getCategories() {
+  'use cache'
+  cacheLife('max')
+  cacheTag('categories')
+  
   try {
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`,
-      {
-        next: { tags: ['categories'] },
-        headers: {'Accept': 'application/json'}
-      }
+      { headers: {'Accept': 'application/json'} }
     );
 
     if (!response.ok) {

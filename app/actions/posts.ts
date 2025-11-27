@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { revalidateTag } from 'next/cache';
+import { updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { 
   POST_ENDPOINTS, 
@@ -198,10 +198,12 @@ export async function createPost(formData: FormData): Promise<void> {
     });
 
     if (status === 'published') {
-      console.log('Revalidating posts and categories...');
-      revalidateTag('posts');
-      revalidateTag('categories');
-      console.log('Revalidation complete!');
+      console.log('Updating posts and categories...');
+
+      updateTag('posts');
+      updateTag('categories');
+
+      console.log('Tag update complete!');
     }
   
         
@@ -261,12 +263,14 @@ export async function updatePost(slug: string, formData: FormData): Promise<void
       body: JSON.stringify(requestBody),
     });
 
-    console.log('Revalidating tags...');
-    revalidateTag(`post-${slug}`);
-    revalidateTag('posts');  
-    revalidateTag('categories'); 
-    revalidateTag(`category-${slug}`);
-    console.log('Revalidation complete!');
+    console.log('Updating tags...');
+
+    updateTag(`post-${slug}`);
+    updateTag('posts');  
+    updateTag('categories'); 
+    updateTag(`category-${slug}`);
+
+    console.log('Tag update complete!');
     
   } catch (error) {
     console.error('記事更新エラー:', error);
@@ -295,10 +299,10 @@ export async function deletePost(slug: string): Promise<ActionResult<undefined>>
       method: 'DELETE',
     });
 
-    revalidateTag(`post-${slug}`);
-    revalidateTag('posts'); 
-    revalidateTag('categories'); 
-    revalidateTag(`category-${slug}`);
+    updateTag(`post-${slug}`);
+    updateTag('posts'); 
+    updateTag('categories'); 
+    updateTag(`category-${slug}`);
     
     return {
       status: 'success',
@@ -342,10 +346,10 @@ export async function updatePostStatus(
       body: JSON.stringify({ status }),
     });
 
-    revalidateTag(`post-${slug}`);
-    revalidateTag('posts');
-    revalidateTag('categories'); 
-    revalidateTag(`category-${slug}`);
+    updateTag(`post-${slug}`);
+    updateTag('posts');
+    updateTag('categories'); 
+    updateTag(`category-${slug}`);
     
     return {
       status: 'success',

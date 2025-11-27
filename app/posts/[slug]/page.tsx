@@ -1,11 +1,8 @@
 import Link from 'next/link';
+import { cacheLife, cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation';
 import { PostDetail, POST_ENDPOINTS, PostListItem } from '@/types/post';
 import ServerMarkdownRenderer from '@/components/ServerMarkdownRenderer';
-
-export const dynamic = 'force-static'; 
-// 新規記事も動的に生成
-export const dynamicParams = true;
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
@@ -26,12 +23,14 @@ export async function generateStaticParams() {
 
 // 単一記事を取得
 async function getPost(slug: string): Promise<PostDetail | null> {
+  'use cache'
+  cacheLife('max')
+  cacheTag(`post-${slug}`)
+
   try {
     const response = await fetch(`${apiUrl}${POST_ENDPOINTS.DETAIL(slug)}`, 
-    {
-      next: { tags:[`post-${slug}`]},
-      headers: { 'Accept': 'application/json' },
-    });
+    { headers: { 'Accept': 'application/json' } });
+
     if (!response.ok) return null;
 
     const json = await response.json();

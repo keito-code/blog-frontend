@@ -1,13 +1,16 @@
 import Link from 'next/link';
+import { cacheLife, cacheTag } from 'next/cache'
 import { POST_ENDPOINTS, PostListItem, PostListData } from '@/types/post';
 import { CATEGORY_ENDPOINTS, CategoryListData } from '@/types/category';
-
-export const dynamic = 'force-static';
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
 // データ取得関数（最新6件のみ）
 async function getRecentPosts(): Promise<PostListData | null> {
+  'use cache'
+  cacheLife('max')          // ← SSG 相当（max: 30 days）
+  cacheTag('posts')         // ← updateTag('posts') と連携
+
   const params = new URLSearchParams({
     status: 'published',
     pageSize: '6',
@@ -17,10 +20,7 @@ async function getRecentPosts(): Promise<PostListData | null> {
   try {
     const response = await fetch(
       `${apiUrl}${POST_ENDPOINTS.LIST}?${params}`,
-      {
-        next: {tags: ['posts'] },
-        headers:{'Accept': 'application/json'}
-      }
+      { headers:{'Accept': 'application/json'} }
     );
     
     if (!response.ok) {
@@ -44,13 +44,14 @@ async function getRecentPosts(): Promise<PostListData | null> {
 
 // カテゴリー一覧を取得
 async function getCategories(): Promise<CategoryListData | null> {
+  'use cache'
+  cacheLife('max')
+  cacheTag('categories')
+
   try {
     const response = await fetch(
       `${apiUrl}${CATEGORY_ENDPOINTS.LIST}`, 
-      {
-        next: { tags: ['categories'] },
-        headers: {'Accept': 'application/json'},
-      }
+      { headers: {'Accept': 'application/json'} }
     );
 
     if (!response.ok) {

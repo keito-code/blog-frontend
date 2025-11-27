@@ -1,11 +1,10 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { cacheLife, cacheTag } from 'next/cache'
 import { notFound } from 'next/navigation';
 import { CategoryDetailData, CategoryPostsData, CategoryListData, CATEGORY_ENDPOINTS } from '@/types/category';
 import { JSendResponse } from '@/types/api';
 import { CategoryClient } from '@/components/categories/CategoryClient';
-
-export const dynamic = 'force-static'; 
 
 const apiUrl = process.env.DJANGO_API_URL || 'http://localhost:8000';
 
@@ -31,10 +30,13 @@ export async function generateStaticParams() {
 } 
 
 async function getCategory(slug: string) {
+  'use cache'
+  cacheLife('max')
+  cacheTag(`category-${slug}`)
+
   try {
     const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.DETAIL(slug)}`, {
-      next: { tags: [`category-${slug}`] },
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json' }
     });
 
     if (!response.ok) {
@@ -52,6 +54,9 @@ async function getCategory(slug: string) {
 }
 
 async function getCategoryPosts(slug: string, page = 1, pageSize = 10) {
+  'use cache'
+  cacheLife('max')
+  cacheTag(`category-${slug}`, 'posts')
   try {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -59,7 +64,6 @@ async function getCategoryPosts(slug: string, page = 1, pageSize = 10) {
     });
 
     const response = await fetch(`${apiUrl}${CATEGORY_ENDPOINTS.POSTS(slug)}?${params}`, {
-      next: { tags: ['posts', `category-${slug}`] },
       headers: { Accept: 'application/json' },
     });
 
