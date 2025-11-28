@@ -12,39 +12,20 @@ async function getCachedPosts() {
   cacheLife('max')
   cacheTag('posts')
 
-  // タイムアウト制御
-  const controller = new AbortController();
-  // 15秒待っても応答がなければ諦める（PCが遅いので長めに設定）
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-  try {
-    const response = await fetch(
-      `${apiUrl}${POST_ENDPOINTS.LIST}?page=1&pageSize=10&status=published`,
-      { 
-        headers: { Accept: 'application/json' },
-        signal: controller.signal,
-     }
-    );
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) return null;
-
-    const json =await response.json();
-    return json?.data ?? null;
-
-  } catch (error) {
-    // タイムアウト発生時の処理
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.warn('⚠️ Build Warning: Data fetch timed out (Low Memory/Slow PC). Returning null to pass build.');
-    } else {
-      console.error('Fetch error:', error);
+  const response = await fetch(
+    `${apiUrl}${POST_ENDPOINTS.LIST}?page=1&pageSize=10&status=published`,
+    { 
+      headers: { Accept: 'application/json' }
     }
-    // エラーを投げずに null を返すことで、ビルド自体は成功させる
-    return null;
-  } finally {
-    clearTimeout(timeoutId);
+  );
+
+  if (!response.ok) {
+    // 404や500エラーの場合は、ここで明確にエラーを投げてビルドを止める
+    throw new Error(`Failed to fetch posts: ${response.status} ${response.statusText}`);
   }
+
+  const json =await response.json();
+  return json?.data ?? null;
 }
 
 export default async function PostsPage() {
