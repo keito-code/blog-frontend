@@ -48,6 +48,12 @@ const nextConfig: NextConfig = {
 
   // ビルドタイムアウトエラーを防ぐため、静的ページ生成の制限時間を延長
   staticPageGenerationTimeout: 300,
+
+  // 並列処理の制限。build時に失敗するので
+  experimental:{
+    cpus: 1,
+    workerThreads: false,
+  },
   
   // React Strict Mode
   reactStrictMode: true,
